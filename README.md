@@ -12,3 +12,6 @@
 
 ## תצוגה מקומית
 פותחים טרמינל בתיקייה ומריצים `python3 -m http.server`, ואז נכנסים ל־http://localhost:8000.
+
+## וורדפרס (editadesign.co.il)
+האתר מוצג דרך התוסף `wordpress/edita-site.php` (מותקן ב־wp-content/plugins/edita-site). התוסף מוריד את התוכן העדכני של הריפו הזה לתיקייה `site/` שלו. השבתת התוסף מחזירה את עמוד הבית הקודם.
