@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Edita Site
  * Description: מציג את האתר החדש של Edita בעמוד הבית. התוכן נמשך מהריפו editadzine-ux/editadesign ב־GitHub. השבתת התוסף מחזירה את עמוד הבית הקודם.
- * Version: 1.4.0
+ * Version: 1.5.0
  * Author: Edita
  * Requires PHP: 7.4
  */
@@ -72,7 +72,38 @@ add_action( 'rest_api_init', function () {
 		'permission_callback' => '__return_true',
 		'callback'            => 'edita_site_contact',
 	) );
+	register_rest_route( 'edita/v1', '/track', array(
+		'methods'             => 'POST',
+		'permission_callback' => '__return_true',
+		'callback'            => 'edita_site_track',
+	) );
 } );
+
+/** Marks that a visitor clicked to continue on WhatsApp. */
+function edita_site_track( WP_REST_Request $req ) {
+	$p   = $req->get_json_params();
+	$p   = is_array( $p ) ? $p : $req->get_body_params();
+	$id  = isset( $p['lead'] ) ? preg_replace( '/[^a-z0-9]/', '', strtolower( (string) $p['lead'] ) ) : '';
+	$evt = isset( $p['event'] ) ? sanitize_key( $p['event'] ) : '';
+	if ( '' === $id || 'wa_click' !== $evt ) {
+		return new WP_REST_Response( array( 'ok' => false ), 400 );
+	}
+	$log   = get_option( 'edita_contact_log', array() );
+	$found = false;
+	foreach ( $log as &$row ) {
+		if ( isset( $row['id'] ) && $row['id'] === $id ) {
+			$row['wa'] = current_time( 'mysql' );
+			$found     = true;
+			break;
+		}
+	}
+	unset( $row );
+	if ( ! $found ) {
+		array_unshift( $log, array( 'id' => $id, 'time' => current_time( 'mysql' ), 'source' => 'wa', 'name' => '', 'wa' => current_time( 'mysql' ) ) );
+	}
+	update_option( 'edita_contact_log', array_slice( $log, 0, 500 ), false );
+	return new WP_REST_Response( array( 'ok' => true ), 200 );
+}
 
 add_filter( 'rest_pre_serve_request', function ( $served, $result, $request ) {
 	if ( 0 === strpos( $request->get_route(), '/edita/v1/' ) ) {
@@ -93,6 +124,8 @@ function edita_site_contact( WP_REST_Request $req ) {
 	$trap  = isset( $p['website'] ) ? trim( (string) $p['website'] ) : '';
 	$age   = isset( $p['elapsed'] ) ? (int) $p['elapsed'] : 0;
 	$src   = isset( $p['source'] ) && 'chat' === $p['source'] ? 'chat' : 'form';
+	$part  = ! empty( $p['partial'] ) && 'chat' === $src;
+	$lid   = isset( $p['lead'] ) ? preg_replace( '/[^a-z0-9]/', '', strtolower( (string) $p['lead'] ) ) : '';
 	$biz   = sanitize_text_field( isset( $p['biz'] ) ? $p['biz'] : '' );
 	$stage = sanitize_text_field( isset( $p['stage'] ) ? $p['stage'] : '' );
 	$when  = sanitize_text_field( isset( $p['when'] ) ? $p['when'] : '' );
@@ -103,7 +136,7 @@ function edita_site_contact( WP_REST_Request $req ) {
 	if ( '' !== $trap || $age < 3000 ) {
 		return new WP_REST_Response( array( 'ok' => true ), 200 );
 	}
-	if ( '' === $name || ( 'form' === $src && ! is_email( $email ) ) || mb_strlen( $msg ) > 5000 || mb_strlen( $name ) > 120 ) {
+	if ( ( '' === $name && ! $part ) || ( 'form' === $src && ! is_email( $email ) ) || mb_strlen( $msg ) > 5000 || mb_strlen( $name ) > 120 ) {
 		return new WP_REST_Response( array( 'ok' => false, 'error' => 'invalid' ), 400 );
 	}
 	$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
@@ -114,10 +147,10 @@ function edita_site_contact( WP_REST_Request $req ) {
 	}
 	set_transient( $key, $n + 1, HOUR_IN_SECONDS );
 	if ( 'chat' === $src ) {
-		$subject = ( $phone ? '🔥 ליד חם מהצ׳אט: ' : 'פנייה מהצ׳אט באתר: ' ) . $name . ( $type ? ' (' . $type . ')' : '' );
+		$subject = $part ? 'צ׳אט שלא הושלם באתר' . ( $name ? ': ' . $name : '' ) . ( $type ? ' (' . $type . ')' : '' ) : ( ( $phone ? '🔥 ליד חם מהצ׳אט: ' : 'פנייה מהצ׳אט באתר: ' ) . $name . ( $type ? ' (' . $type . ')' : '' ) );
 		$tel     = $phone ? preg_replace( '/[^\d+]/', '', $phone ) : '';
 		$wa      = $tel ? 'https://wa.me/' . preg_replace( '/^0/', '972', ltrim( $tel, '+' ) ) : '';
-		$body    = "שם: {$name}\n" . ( $phone ? "טלפון: {$phone}\n" : '' ) . ( $biz ? "עסק: {$biz}\n" : '' ) . ( $type ? "מה צריך: {$type}\n" : '' ) . ( $stage ? "איפה עומדים: {$stage}\n" : '' ) . ( $budg ? "תקציב: {$budg}\n" : '' ) . ( $when ? "מתי להתחיל: {$when}\n" : '' ) . ( $slot ? "זמן נוח לשיחה: {$slot}\n" : '' ) . ( $qs ? "\nשאלות שנשאלו בצ׳אט:\n{$qs}\n" : '' ) . ( $wa ? "\nלכתוב לו/לה בוואטסאפ: {$wa}\n" : "\nהפונה בחר/ה להמשיך בוואטסאפ ולא השאיר/ה טלפון.\n" ) . "\n" . home_url( '/' );
+		$body    = ( $part ? "המבקר/ת התחיל/ה שיחה בצ׳אט ויצא/ה לפני הסוף. זה מה שהספיק/ה למלא:\n\n" : '' ) . "שם: " . ( $name ? $name : 'לא נמסר' ) . "\n" . ( $phone ? "טלפון: {$phone}\n" : '' ) . ( $biz ? "עסק: {$biz}\n" : '' ) . ( $type ? "מה צריך: {$type}\n" : '' ) . ( $stage ? "איפה עומדים: {$stage}\n" : '' ) . ( $budg ? "תקציב: {$budg}\n" : '' ) . ( $when ? "מתי להתחיל: {$when}\n" : '' ) . ( $slot ? "זמן נוח לשיחה: {$slot}\n" : '' ) . ( $qs ? "\nשאלות שנשאלו בצ׳אט:\n{$qs}\n" : '' ) . ( $wa ? "\nלכתוב לו/לה בוואטסאפ: {$wa}\n" : "\nהפונה בחר/ה להמשיך בוואטסאפ ולא השאיר/ה טלפון.\n" ) . "\n" . home_url( '/' );
 		$headers = array( 'Content-Type: text/plain; charset=UTF-8' );
 	} else {
 		$subject = 'פנייה חדשה מהאתר: ' . $name . ( $type ? ' (' . $type . ')' : '' );
@@ -126,9 +159,45 @@ function edita_site_contact( WP_REST_Request $req ) {
 	}
 	$sent    = wp_mail( EDITA_SITE_MAILTO, $subject, $body, $headers );
 	$log     = get_option( 'edita_contact_log', array() );
-	array_unshift( $log, array( 'time' => current_time( 'mysql' ), 'source' => $src, 'phone' => $phone, 'budget' => $budg, 'slot' => $slot, 'questions' => $qs, 'biz' => $biz, 'stage' => $stage, 'when' => $when, 'name' => $name, 'email' => $email, 'type' => $type, 'msg' => $msg, 'mailed' => (bool) $sent ) );
-	update_option( 'edita_contact_log', array_slice( $log, 0, 200 ), false );
+	$prev_wa = '';
+	foreach ( $log as $r ) {
+		if ( $lid && isset( $r['id'] ) && $r['id'] === $lid && ! empty( $r['wa'] ) ) {
+			$prev_wa = $r['wa'];
+		}
+	}
+	$log     = array_values( array_filter( $log, function ( $r ) use ( $lid ) { return ! ( $lid && isset( $r['id'] ) && $r['id'] === $lid ); } ) );
+	array_unshift( $log, array( 'id' => $lid, 'partial' => $part, 'wa' => $prev_wa, 'time' => current_time( 'mysql' ), 'source' => $src, 'phone' => $phone, 'budget' => $budg, 'slot' => $slot, 'questions' => $qs, 'biz' => $biz, 'stage' => $stage, 'when' => $when, 'name' => $name, 'email' => $email, 'type' => $type, 'msg' => $msg, 'mailed' => (bool) $sent ) );
+	update_option( 'edita_contact_log', array_slice( $log, 0, 500 ), false );
 	return new WP_REST_Response( array( 'ok' => (bool) $sent ), $sent ? 200 : 500 );
+}
+
+/** Admin screen listing every lead from the site. */
+add_action( 'admin_menu', function () {
+	add_menu_page( 'פניות מהאתר', 'פניות מהאתר', 'manage_options', 'edita-leads', 'edita_site_leads_page', 'dashicons-format-chat', 3 );
+} );
+
+function edita_site_leads_page() {
+	$log = get_option( 'edita_contact_log', array() );
+	$n_all = count( $log );
+	$n_wa  = count( array_filter( $log, function ( $r ) { return ! empty( $r['wa'] ); } ) );
+	$n_tel = count( array_filter( $log, function ( $r ) { return ! empty( $r['phone'] ); } ) );
+	echo '<div class="wrap" dir="rtl"><h1>פניות מהאתר</h1>';
+	echo '<p style="font-size:14px">סה״כ ' . (int) $n_all . ' פניות · ' . (int) $n_tel . ' השאירו טלפון · ' . (int) $n_wa . ' לחצו לשלוח בוואטסאפ</p>';
+	echo '<table class="widefat striped"><thead><tr><th>מתי</th><th>מקור</th><th>שם</th><th>טלפון / מייל</th><th>מה צריך</th><th>תקציב</th><th>מתי להתחיל</th><th>זמן לשיחה</th><th>וואטסאפ</th><th>הודעה / שאלות</th></tr></thead><tbody>';
+	if ( ! $log ) {
+		echo '<tr><td colspan="10">עוד אין פניות.</td></tr>';
+	}
+	foreach ( $log as $r ) {
+		$src = isset( $r['source'] ) ? $r['source'] : 'form';
+		$lbl = 'form' === $src ? 'טופס' : ( 'wa' === $src ? 'וואטסאפ בלבד' : ( ! empty( $r['partial'] ) ? 'צ׳אט, לא הושלם' : 'צ׳אט' ) );
+		$tel = ! empty( $r['phone'] ) ? $r['phone'] : '';
+		$wal = $tel ? 'https://wa.me/' . preg_replace( '/^0/', '972', ltrim( preg_replace( '/[^\d+]/', '', $tel ), '+' ) ) : '';
+		$contact = $tel ? esc_html( $tel ) . ' · <a href="' . esc_url( $wal ) . '" target="_blank">וואטסאפ</a>' : ( ! empty( $r['email'] ) ? '<a href="mailto:' . esc_attr( $r['email'] ) . '">' . esc_html( $r['email'] ) . '</a>' : '' );
+		$wa  = ! empty( $r['wa'] ) ? '<span style="color:#1a7f37;font-weight:600">לחץ/ה</span>' : '<span style="color:#8a8a8a">לא</span>';
+		$txt = trim( ( isset( $r['msg'] ) ? $r['msg'] : '' ) . ' ' . ( isset( $r['questions'] ) ? $r['questions'] : '' ) );
+		echo '<tr><td>' . esc_html( $r['time'] ) . '</td><td>' . esc_html( $lbl ) . '</td><td>' . esc_html( isset( $r['name'] ) ? $r['name'] : '' ) . '</td><td>' . $contact . '</td><td>' . esc_html( isset( $r['type'] ) ? $r['type'] : '' ) . '</td><td>' . esc_html( isset( $r['budget'] ) ? $r['budget'] : '' ) . '</td><td>' . esc_html( isset( $r['when'] ) ? $r['when'] : '' ) . '</td><td>' . esc_html( isset( $r['slot'] ) ? $r['slot'] : '' ) . '</td><td>' . $wa . '</td><td>' . esc_html( $txt ) . '</td></tr>'; // phpcs:ignore
+	}
+	echo '</tbody></table></div>';
 }
 
 /** Serves the site: live on the front page when enabled, or anywhere with ?edita_preview=1. */
