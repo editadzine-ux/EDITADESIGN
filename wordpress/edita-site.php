@@ -150,7 +150,7 @@ function edita_site_contact( WP_REST_Request $req ) {
 		$subject = $part ? 'צ׳אט שלא הושלם באתר' . ( $name ? ': ' . $name : '' ) . ( $type ? ' (' . $type . ')' : '' ) : ( ( $phone ? '🔥 ליד חם מהצ׳אט: ' : 'פנייה מהצ׳אט באתר: ' ) . $name . ( $type ? ' (' . $type . ')' : '' ) );
 		$tel     = $phone ? preg_replace( '/[^\d+]/', '', $phone ) : '';
 		$wa      = $tel ? 'https://wa.me/' . preg_replace( '/^0/', '972', ltrim( $tel, '+' ) ) : '';
-		$body    = ( $part ? "המבקר/ת התחיל/ה שיחה בצ׳אט ויצא/ה לפני הסוף. זה מה שהספיק/ה למלא:\n\n" : '' ) . "שם: " . ( $name ? $name : 'לא נמסר' ) . "\n" . ( $phone ? "טלפון: {$phone}\n" : '' ) . ( $biz ? "עסק: {$biz}\n" : '' ) . ( $type ? "מה צריך: {$type}\n" : '' ) . ( $stage ? "איפה עומדים: {$stage}\n" : '' ) . ( $budg ? "האופי של המותג: {$budg}\n" : '' ) . ( $when ? "מתי להתחיל: {$when}\n" : '' ) . ( $slot ? "זמן נוח לשיחה: {$slot}\n" : '' ) . ( $qs ? "\nשאלות שנשאלו בצ׳אט:\n{$qs}\n" : '' ) . ( $wa ? "\nלכתוב לו/לה בוואטסאפ: {$wa}\n" : "\nהפונה בחר/ה להמשיך בוואטסאפ ולא השאיר/ה טלפון.\n" ) . "\n" . home_url( '/' );
+		$body    = ( $part ? "המבקר/ת התחיל/ה שיחה בצ׳אט ויצא/ה לפני הסוף. זה מה שהספיק/ה למלא:\n\n" : '' ) . "שם: " . ( $name ? $name : 'לא נמסר' ) . "\n" . ( $phone ? "טלפון: {$phone}\n" : '' ) . ( $biz ? "עסק: {$biz}\n" : '' ) . ( $type ? "מה צריך: {$type}\n" : '' ) . ( $stage ? "איפה עומדים: {$stage}\n" : '' ) . ( $budg ? "מה הכי חשוב להשיג: {$budg}\n" : '' ) . ( $when ? "מתי להתחיל: {$when}\n" : '' ) . ( $slot ? "זמן נוח לשיחה: {$slot}\n" : '' ) . ( $qs ? "\nשאלות שנשאלו בצ׳אט:\n{$qs}\n" : '' ) . ( $wa ? "\nלכתוב לו/לה בוואטסאפ: {$wa}\n" : "\nהפונה בחר/ה להמשיך בוואטסאפ ולא השאיר/ה טלפון.\n" ) . "\n" . home_url( '/' );
 		$headers = array( 'Content-Type: text/plain; charset=UTF-8' );
 	} else {
 		$subject = 'פנייה חדשה מהאתר: ' . $name . ( $type ? ' (' . $type . ')' : '' );
@@ -183,7 +183,7 @@ function edita_site_leads_page() {
 	$n_tel = count( array_filter( $log, function ( $r ) { return ! empty( $r['phone'] ); } ) );
 	echo '<div class="wrap" dir="rtl"><h1>פניות מהאתר</h1>';
 	echo '<p style="font-size:14px">סה״כ ' . (int) $n_all . ' פניות · ' . (int) $n_tel . ' השאירו טלפון · ' . (int) $n_wa . ' לחצו לשלוח בוואטסאפ</p>';
-	echo '<table class="widefat striped"><thead><tr><th>מתי</th><th>מקור</th><th>שם</th><th>טלפון / מייל</th><th>מה צריך</th><th>אופי המותג</th><th>מתי להתחיל</th><th>זמן לשיחה</th><th>וואטסאפ</th><th>הודעה / שאלות</th></tr></thead><tbody>';
+	echo '<table class="widefat striped"><thead><tr><th>מתי</th><th>מקור</th><th>שם</th><th>טלפון / מייל</th><th>מה צריך</th><th>מטרה</th><th>מתי להתחיל</th><th>זמן לשיחה</th><th>וואטסאפ</th><th>הודעה / שאלות</th></tr></thead><tbody>';
 	if ( ! $log ) {
 		echo '<tr><td colspan="10">עוד אין פניות.</td></tr>';
 	}
