@@ -648,6 +648,14 @@ video::-internal-media-controls-overlay-cast-button{display:none!important}
 .faq-i[open] summary::after{transform:rotate(45deg);background:#1E1E26;color:#F1EADC;box-shadow:none}
 .faq-a{margin:0;padding:0 0 26px;max-width:62ch;font-size:17px;line-height:1.75;color:var(--muted)}
 @media (max-width:980px){.faq-in{grid-template-columns:minmax(0,1fr)}.faq-head{position:static}}
+.intro-sec{background:var(--bg);color:var(--fg)}
+.intro-in{max-width:900px;text-align:center;padding-block:clamp(70px,9vw,130px)}
+.intro-h{margin:0;font-size:clamp(34px,5vw,68px);line-height:1.08;font-weight:600;letter-spacing:-.01em}
+.intro-line{display:block;width:120px;height:4px;border-radius:4px;margin:30px auto;background:linear-gradient(90deg,#E8A82A,#D7263D)}
+.intro-p{margin:0 auto;max-width:64ch;font-size:clamp(18px,1.6vw,22px);line-height:1.8;color:#33313A}
+.intro-cta{display:flex;gap:22px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:36px}
+.intro-link{font-weight:600;text-decoration:underline;text-underline-offset:5px}
+.intro-link:hover{color:#B91E34}
 .wa-chat{position:fixed;bottom:22px;inset-inline-start:22px;z-index:62;display:flex;flex-direction:column;align-items:flex-start;gap:14px;font-family:'IBM Plex Sans Hebrew',sans-serif}
 .wc-fab{position:relative;display:flex;align-items:center;gap:12px;height:64px;padding:0 10px 0 24px;border-radius:999px;border:0;background:#D7263D;color:#F1EADC;cursor:pointer;box-shadow:0 22px 44px -16px rgba(185,30,52,.75);transition:transform .35s cubic-bezier(.2,.8,.2,1),background .3s,color .3s,padding .3s;animation:wcIn .6s cubic-bezier(.2,.8,.2,1) .8s both,wcNudge 6s ease-in-out 4s infinite}
 .wc-fab::before,.wc-fab::after{content:'';position:absolute;inset:0;border-radius:inherit;border:2px solid #D7263D;animation:wcWave 2.4s cubic-bezier(.2,.6,.3,1) 1.6s infinite;pointer-events:none}
