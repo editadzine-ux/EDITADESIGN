@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Edita Site
  * Description: מציג את האתר החדש של Edita בעמוד הבית. התוכן נמשך מהריפו editadzine-ux/editadesign ב־GitHub. השבתת התוסף מחזירה את עמוד הבית הקודם.
- * Version: 1.7.0
+ * Version: 1.8.0
  * Author: Edita
  * Requires PHP: 7.4
  */
@@ -290,3 +290,42 @@ add_action( 'parse_request', function () {
 add_filter( 'robots_txt', function ( $out ) {
 	return rtrim( $out ) . "\n\n# AI summary: " . home_url( '/llms.txt' ) . "\n";
 }, 99 );
+
+/* Content pages (guides and tools) built with the site, plus their sitemap. */
+function edita_site_pages() {
+	$f = plugin_dir_path( __FILE__ ) . 'site/pages/index.json';
+	$list = file_exists( $f ) ? json_decode( file_get_contents( $f ), true ) : array(); // phpcs:ignore
+	return is_array( $list ) ? $list : array();
+}
+
+add_action( 'parse_request', function () {
+	$path = isset( $_SERVER['REQUEST_URI'] ) ? strtok( wp_unslash( $_SERVER['REQUEST_URI'] ), '?' ) : ''; // phpcs:ignore
+	$dir  = plugin_dir_path( __FILE__ ) . 'site/pages/';
+	if ( '/edita-sitemap.xml' === $path && file_exists( $dir . 'sitemap.xml' ) ) {
+		status_header( 200 );
+		header( 'Content-Type: application/xml; charset=utf-8' );
+		readfile( $dir . 'sitemap.xml' ); // phpcs:ignore
+		exit;
+	}
+	$slug = trim( $path, '/' );
+	if ( '' === $slug || ! in_array( $slug, edita_site_pages(), true ) ) {
+		return;
+	}
+	if ( '/' !== substr( $path, -1 ) ) {
+		wp_safe_redirect( home_url( '/' . $slug . '/' ), 301 );
+		exit;
+	}
+	status_header( 200 );
+	nocache_headers();
+	header( 'Content-Type: text/html; charset=utf-8' );
+	readfile( $dir . $slug . '.html' ); // phpcs:ignore
+	exit;
+}, 1 );
+
+add_filter( 'wpseo_sitemap_index', function ( $xml ) {
+	return $xml . '<sitemap><loc>' . esc_url( home_url( '/edita-sitemap.xml' ) ) . '</loc></sitemap>' . "\n";
+} );
+
+add_filter( 'robots_txt', function ( $out ) {
+	return rtrim( $out ) . "\nSitemap: " . home_url( '/edita-sitemap.xml' ) . "\n";
+}, 100 );
