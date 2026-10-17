@@ -70,6 +70,7 @@ class Component extends DCLogic {
     if (!el) return;
     const fresh = this.video !== el;
     this.video = el;
+    try { el.disableRemotePlayback = true; el.disablePictureInPicture = true; el.setAttribute('disableremoteplayback', ''); el.setAttribute('x-webkit-airplay', 'deny'); } catch (e) {}
     el.muted = this.state.muted;
     el.defaultMuted = true;
     if (!fresh) return;

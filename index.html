@@ -625,6 +625,7 @@ a{color:inherit}a:hover{color:#B91E34}
 .s4 .step-bird{transform:translateY(calc((1 - clamp(0, calc((var(--p) - .72) * 5), 1)) * -60px))}
 .voices{position:relative;color:#F1EADC}
 .voices-bg{position:absolute;inset:0;background:#B91E34;clip-path:circle(calc(var(--p) * 175vmax) at 8% 0%);z-index:0}
+video::-internal-media-controls-overlay-cast-button{display:none!important}
 .wa-chat{position:fixed;bottom:22px;inset-inline-start:22px;z-index:62;display:flex;flex-direction:column;align-items:flex-start;gap:14px;font-family:'IBM Plex Sans Hebrew',sans-serif}
 .wc-fab{position:relative;display:flex;align-items:center;gap:12px;height:64px;padding:0 10px 0 24px;border-radius:999px;border:0;background:#D7263D;color:#F1EADC;cursor:pointer;box-shadow:0 22px 44px -16px rgba(185,30,52,.75);transition:transform .35s cubic-bezier(.2,.8,.2,1),background .3s,color .3s,padding .3s;animation:wcIn .6s cubic-bezier(.2,.8,.2,1) .8s both,wcNudge 6s ease-in-out 4s infinite}
 .wc-fab::before,.wc-fab::after{content:'';position:absolute;inset:0;border-radius:inherit;border:2px solid #D7263D;animation:wcWave 2.4s cubic-bezier(.2,.6,.3,1) 1.6s infinite;pointer-events:none}
