@@ -274,7 +274,7 @@ class Component extends DCLogic {
       const r = el.getBoundingClientRect();
       let p;
       if (el.getAttribute('data-sp') === 'span') {
-        const d = Math.max(1, r.height - vh * 0.45);
+        const d = r.height > vh ? r.height - vh * 0.45 : vh * 0.5;
         p = this.reduce ? 1 : Math.min(1, Math.max(0, ((vh * 0.62 - r.top) / d - 0.12) / 1.12));
       } else if (el.getAttribute('data-sp') === 'out') {
         p = this.reduce ? 0 : Math.min(1, Math.max(0, -r.top / Math.max(1, r.height)));
