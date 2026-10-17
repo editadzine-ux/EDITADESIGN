@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Edita Site
  * Description: מציג את האתר החדש של Edita בעמוד הבית. התוכן נמשך מהריפו editadzine-ux/editadesign ב־GitHub. השבתת התוסף מחזירה את עמוד הבית הקודם.
- * Version: 1.6.0
+ * Version: 1.7.0
  * Author: Edita
  * Requires PHP: 7.4
  */
@@ -267,4 +267,26 @@ add_action( 'send_headers', function () {
 add_filter( 'wpseo_sitemap_entry', function ( $url ) {
 	$loc = is_array( $url ) && isset( $url['loc'] ) ? untrailingslashit( $url['loc'] ) : '';
 	return ( untrailingslashit( home_url( '/' ) ) === $loc ) ? $url : false;
+}, 99 );
+
+/* GEO: a plain-text summary for AI assistants at /llms.txt. */
+add_action( 'parse_request', function () {
+	$path = isset( $_SERVER['REQUEST_URI'] ) ? strtok( wp_unslash( $_SERVER['REQUEST_URI'] ), '?' ) : ''; // phpcs:ignore
+	if ( '/llms.txt' !== $path ) {
+		return;
+	}
+	$file = plugin_dir_path( __FILE__ ) . 'site/llms.txt';
+	if ( ! file_exists( $file ) ) {
+		return;
+	}
+	status_header( 200 );
+	header( 'Content-Type: text/plain; charset=utf-8' );
+	header( 'X-Robots-Tag: noindex' );
+	readfile( $file ); // phpcs:ignore
+	exit;
+}, 0 );
+
+/* Point crawlers at the AI summary too. */
+add_filter( 'robots_txt', function ( $out ) {
+	return rtrim( $out ) . "\n\n# AI summary: " . home_url( '/llms.txt' ) . "\n";
 }, 99 );
