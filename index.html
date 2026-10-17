@@ -626,6 +626,18 @@ a{color:inherit}a:hover{color:#B91E34}
 .voices{position:relative;color:#F1EADC}
 .voices-bg{position:absolute;inset:0;background:#B91E34;clip-path:circle(calc(var(--p) * 175vmax) at 8% 0%);z-index:0}
 video::-internal-media-controls-overlay-cast-button{display:none!important}
+.ck{position:fixed;bottom:22px;inset-inline-end:22px;z-index:70;width:min(440px,calc(100vw - 32px));display:grid;grid-template-columns:auto 1fr;gap:12px 14px;align-items:start;padding:18px 18px 16px;background:#1E1E26;color:#F1EADC;border-radius:22px;box-shadow:0 30px 70px -24px rgba(0,0,0,.6);font-family:'IBM Plex Sans Hebrew',sans-serif;animation:wcIn .5s cubic-bezier(.2,.8,.2,1) both}
+.ck-ic{width:44px;height:44px;border-radius:50%;background:#E8A82A;color:#1E1E26;display:flex;align-items:center;justify-content:center}
+.ck-t{margin:0;font-size:14.5px;line-height:1.55;opacity:.92}
+.ck-t b{display:block;font-size:16px;margin-bottom:3px;opacity:1}
+.ck-b{grid-column:1 / -1;display:flex;gap:10px}
+.ck-b button{flex:1;min-height:44px;border-radius:999px;font:600 15px/1 'IBM Plex Sans Hebrew',sans-serif;cursor:pointer;transition:background .25s,color .25s,border-color .25s}
+.ck-ok{border:0;background:#E8A82A;color:#1E1E26}
+.ck-ok:hover{background:#F1EADC}
+.ck-no{border:1.5px solid rgba(241,234,220,.35);background:transparent;color:#F1EADC}
+.ck-no:hover{border-color:#F1EADC}
+@media (max-width:700px){.ck{bottom:12px;inset-inline:12px;width:auto;padding:16px 14px 14px}.wa-chat.ck-on{display:none}}
+@media (prefers-reduced-motion:reduce){.ck{animation:none}}
 .wa-chat{position:fixed;bottom:22px;inset-inline-start:22px;z-index:62;display:flex;flex-direction:column;align-items:flex-start;gap:14px;font-family:'IBM Plex Sans Hebrew',sans-serif}
 .wc-fab{position:relative;display:flex;align-items:center;gap:12px;height:64px;padding:0 10px 0 24px;border-radius:999px;border:0;background:#D7263D;color:#F1EADC;cursor:pointer;box-shadow:0 22px 44px -16px rgba(185,30,52,.75);transition:transform .35s cubic-bezier(.2,.8,.2,1),background .3s,color .3s,padding .3s;animation:wcIn .6s cubic-bezier(.2,.8,.2,1) .8s both,wcNudge 6s ease-in-out 4s infinite}
 .wc-fab::before,.wc-fab::after{content:'';position:absolute;inset:0;border-radius:inherit;border:2px solid #D7263D;animation:wcWave 2.4s cubic-bezier(.2,.6,.3,1) 1.6s infinite;pointer-events:none}
@@ -694,7 +706,7 @@ video::-internal-media-controls-overlay-cast-button{display:none!important}
 .wc-human{display:flex;align-items:center;justify-content:center;gap:8px;border:0;background:#F4EEE2;color:#5A5650;font:500 13px/1 'IBM Plex Sans Hebrew',sans-serif;padding:8px 12px 13px;cursor:pointer;transition:color .25s}
 .wc-human:hover{color:#1E1E26}
 .wc-human svg{width:16px;height:16px;color:#3a9a4c}
-@media (max-width:700px){.wa-chat{bottom:16px;inset-inline-start:16px}.wc-fab{height:58px;padding:0 8px 0 18px}.wc-fab .wc-ic-wa{width:42px;height:42px}.wc-fab-lbl{font-size:16px}.wc-fab.on{width:58px}.wc-panel{width:calc(100vw - 32px);height:calc(100vh - 100px);height:calc(100dvh - 100px)}}
+@media (max-width:700px){.wa-chat{bottom:16px;inset-inline-start:16px}.wa-chat{bottom:14px;inset-inline-start:14px}.wc-fab{width:46px;height:46px;padding:0;justify-content:center;box-shadow:0 10px 22px -10px rgba(185,30,52,.7)}.wc-fab::before,.wc-fab::after,.wc-fab-lbl,.wc-badge,.wc-teaser{display:none!important}.wc-fab .wc-ic-wa{width:auto;height:auto;background:none;color:#F1EADC}.wc-fab .wc-ic-wa svg{width:22px;height:22px}.wc-fab.on{width:46px}.wc-fab.on .wc-ic-x svg{width:18px;height:18px}.wc-panel{width:calc(100vw - 32px);height:calc(100vh - 100px);height:calc(100dvh - 100px)}}
 @media (prefers-reduced-motion:reduce){.wc-panel,.wc-msg,.wc-opts,.wc-final,.wc-teaser,.wc-fab,.wc-cards,.wc-fab::before,.wc-fab::after{animation:none}}
 .lg-marquee{position:relative;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent)}
 .lg-track{display:flex;align-items:center;width:max-content;animation:lgRun 46s linear infinite}
