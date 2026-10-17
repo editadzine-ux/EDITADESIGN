@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Edita Site
  * Description: מציג את האתר החדש של Edita בעמוד הבית. התוכן נמשך מהריפו editadzine-ux/editadesign ב־GitHub. השבתת התוסף מחזירה את עמוד הבית הקודם.
- * Version: 1.8.0
+ * Version: 1.9.0
  * Author: Edita
  * Requires PHP: 7.4
  */
@@ -225,6 +225,7 @@ add_action( 'template_redirect', function () {
 	foreach ( array( 'react.production.min.js', 'react-dom.production.min.js', 'dc-lite.js' ) as $js ) {
 		$html = str_replace( 'src="js/' . $js . '"', 'src="' . $url . 'js/' . $js . '"', $html );
 	}
+	$html = str_replace( 'href="css/site.css', 'href="' . $url . 'css/site.css', $html );
 	$html = str_replace( '<script src="js/app.js"></script>', '<script>' . str_replace( '</script', '<\/script', $app ) . '</script>', $html );
 	if ( $preview ) {
 		$html = str_replace( '<head>', "<head>\n<meta name=\"robots\" content=\"noindex\">", $html );
