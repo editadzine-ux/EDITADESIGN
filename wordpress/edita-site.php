@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Edita Site
  * Description: מציג את האתר החדש של Edita בעמוד הבית. התוכן נמשך מהריפו editadzine-ux/editadesign ב־GitHub. השבתת התוסף מחזירה את עמוד הבית הקודם.
- * Version: 1.5.0
+ * Version: 1.6.0
  * Author: Edita
  * Requires PHP: 7.4
  */
@@ -235,3 +235,36 @@ add_action( 'template_redirect', function () {
 	echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	exit;
 }, 0 );
+
+/*
+ * Indexing: only the home page may appear in search engines.
+ * Every other URL (old pages, posts, archives, attachments) gets noindex
+ * and is left out of the Yoast sitemap.
+ */
+function edita_site_is_home_request() {
+	return is_front_page() || is_home();
+}
+
+add_filter( 'wp_robots', function ( $robots ) {
+	if ( ! edita_site_is_home_request() ) {
+		$robots['noindex']  = true;
+		$robots['follow']   = true;
+		unset( $robots['index'], $robots['max-image-preview'] );
+	}
+	return $robots;
+}, 99 );
+
+add_filter( 'wpseo_robots', function ( $value ) {
+	return edita_site_is_home_request() ? $value : 'noindex, follow';
+}, 99 );
+
+add_action( 'send_headers', function () {
+	if ( ! is_admin() && ! edita_site_is_home_request() ) {
+		header( 'X-Robots-Tag: noindex, follow', true );
+	}
+} );
+
+add_filter( 'wpseo_sitemap_entry', function ( $url ) {
+	$loc = is_array( $url ) && isset( $url['loc'] ) ? untrailingslashit( $url['loc'] ) : '';
+	return ( untrailingslashit( home_url( '/' ) ) === $loc ) ? $url : false;
+}, 99 );
