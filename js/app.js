@@ -856,8 +856,8 @@ class Component extends DCLogic {
     return {
       dark: dark, light: !dark, themeCls: (dark ? 'dark' : '') + ((this.props.heroFull ?? true) ? ' hf' : ''),
       rootRef: this.rootRef, footRef: this.footRef, videoRef: this.videoRef, flockRef: this.flockRef, penRef: this.penRef, penPathRef: this.penPathRef, nibRef: this.nibRef,
-      videoSrc: s.mobile ? 'assets/400f4d9fb8f0a43481c4e50d66662cbe.mp4' : 'assets/6361914f81e30fc0a0a729ebe5d0651f.mp4',
-      posterSrc: s.mobile ? 'assets/76393afc546f96a219823c7f998fe1cc.jpg' : 'assets/12b92d9f74fb92a6bb2c97910f16b523.jpg',
+      videoSrc: s.mobile ? 'assets/4445c0f70d2ebb5a2b0a3711ea8e3143.mp4' : 'assets/a16e9107714f46973a7d5a1ddf265edd.mp4',
+      posterSrc: s.mobile ? 'assets/87fa15b5ac25e71675c67e29afc4dd3a.jpg' : 'assets/21327ade1b7cdea4dd7115136571d2e4.jpg',
       menuOpen: s.menuOpen, toggleMenu: this.toggleMenu,
       playing: s.playing, notPlaying: !s.playing, showBigPlay: showBigPlay,
       playLabel: s.playing ? 'השהיה' : 'הפעלה',
