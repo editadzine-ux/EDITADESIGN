@@ -574,7 +574,7 @@ a{color:inherit}a:hover{color:#B91E34}
 .bx-body{margin-top:auto;padding-top:22px}
 .bx h3{margin:0 0 8px;font-size:clamp(20px,1.7vw,26px);font-weight:600;line-height:1.15}
 .bx p{margin:0;font-size:15.5px;line-height:1.6;opacity:.85}
-.bx-a h3,.bx-g h3{font-size:clamp(24px,2.2vw,34px)}
+.bx-g h3{font-size:clamp(24px,2.2vw,34px)}
 .bx-a p,.bx-g p{max-width:46ch}
 .bx-c h3,.bx-d h3{font-size:clamp(22px,2vw,30px)}
 .bx .sv-chips{margin-top:14px}
@@ -589,7 +589,7 @@ a{color:inherit}a:hover{color:#B91E34}
 .cs-stmt{font-size:clamp(36px,4.4vw,68px)!important;line-height:1!important}
 .ed blockquote{font-size:clamp(36px,4.8vw,76px)!important;line-height:1!important}
 .bx h3{font-size:clamp(30px,2.5vw,40px)!important;line-height:.95!important;margin-bottom:10px!important}
-.bx-a h3,.bx-g h3{font-size:clamp(38px,3.2vw,52px)!important}
+.bx-g h3{font-size:clamp(38px,3.2vw,52px)!important}
 .crow-t h3{font-size:clamp(32px,3vw,46px)!important;line-height:1!important}
 .prin{font-size:clamp(34px,3vw,46px)!important;line-height:1!important}
 .type h4{font-size:30px!important;line-height:1!important}
