@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Edita Site
  * Description: מציג את האתר החדש של Edita בעמוד הבית. התוכן נמשך מהריפו editadzine-ux/editadesign ב־GitHub. השבתת התוסף מחזירה את עמוד הבית הקודם.
- * Version: 1.9.0
+ * Version: 1.10.0
  * Author: Edita
  * Requires PHP: 7.4
  */
@@ -233,9 +233,56 @@ add_action( 'template_redirect', function () {
 	status_header( 200 );
 	nocache_headers();
 	header( 'Content-Type: text/html; charset=utf-8' );
-	echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo edita_site_extras( $html ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	exit;
 }, 0 );
+
+/* Favicon from the WordPress site icon, and the Ally accessibility widget when it is connected. */
+function edita_site_icons() {
+	if ( ! function_exists( 'has_site_icon' ) || ! has_site_icon() ) {
+		return '';
+	}
+	return '<link rel="icon" href="' . esc_url( get_site_icon_url( 32 ) ) . '" sizes="32x32">' . "\n"
+		. '<link rel="icon" href="' . esc_url( get_site_icon_url( 192 ) ) . '" sizes="192x192">' . "\n"
+		. '<link rel="apple-touch-icon" href="' . esc_url( get_site_icon_url( 180 ) ) . '">' . "\n"
+		. '<meta name="theme-color" content="#1E1E26">' . "\n";
+}
+
+function edita_site_ally() {
+	static $out = null;
+	if ( null !== $out ) {
+		return $out;
+	}
+	$out = '';
+	if ( ! defined( 'EA11Y_VERSION' ) ) {
+		return $out;
+	}
+	try {
+		do_action( 'wp_enqueue_scripts' );
+		if ( wp_script_is( 'ea11y-widget', 'enqueued' ) ) {
+			ob_start();
+			wp_styles()->do_items( array( 'ea11y-widget-fonts' ) );
+			wp_scripts()->do_items( array( 'ea11y-widget' ) );
+			$out = ob_get_clean();
+		}
+	} catch ( \Throwable $e ) {
+		$out = '';
+	}
+	return $out;
+}
+
+function edita_site_extras( $html ) {
+	$html = preg_replace( '#<link rel="icon"[^>]*>\s*#', '', $html );
+	$html = str_replace( '</head>', edita_site_icons() . '</head>', $html );
+	$ally = edita_site_ally();
+	if ( $ally ) {
+		$pos = strrpos( $html, '</body>' );
+		if ( false !== $pos ) {
+			$html = substr( $html, 0, $pos ) . $ally . substr( $html, $pos );
+		}
+	}
+	return $html;
+}
 
 /*
  * Indexing: only the home page may appear in search engines.
@@ -319,7 +366,7 @@ add_action( 'parse_request', function () {
 	status_header( 200 );
 	nocache_headers();
 	header( 'Content-Type: text/html; charset=utf-8' );
-	readfile( $dir . $slug . '.html' ); // phpcs:ignore
+	echo edita_site_extras( file_get_contents( $dir . $slug . '.html' ) ); // phpcs:ignore
 	exit;
 }, 1 );
 
