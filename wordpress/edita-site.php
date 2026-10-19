@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Edita Site
  * Description: מציג את האתר החדש של Edita בעמוד הבית. התוכן נמשך מהריפו editadzine-ux/editadesign ב־GitHub. השבתת התוסף מחזירה את עמוד הבית הקודם.
- * Version: 1.10.0
+ * Version: 1.11.0
  * Author: Edita
  * Requires PHP: 7.4
  */
@@ -237,7 +237,7 @@ add_action( 'template_redirect', function () {
 	exit;
 }, 0 );
 
-/* Favicon from the WordPress site icon, and the Ally accessibility widget when it is connected. */
+/* Favicon from the WordPress site icon; Analytics and Ally are printed by edita_site_frontend(). */
 function edita_site_icons() {
 	if ( ! function_exists( 'has_site_icon' ) || ! has_site_icon() ) {
 		return '';
@@ -248,37 +248,74 @@ function edita_site_icons() {
 		. '<meta name="theme-color" content="#1E1E26">' . "\n";
 }
 
-function edita_site_ally() {
+/**
+ * Front-end assets for the custom pages, which are printed without wp_head/wp_footer.
+ * Runs WordPress's script queue once and prints only what the site needs:
+ *  - head: the Google Analytics tag set up by Site Kit (same settings, same exclusions),
+ *          behind Google Consent Mode tied to the site's own cookie banner;
+ *  - foot: the Ally accessibility widget.
+ */
+function edita_site_frontend() {
 	static $out = null;
 	if ( null !== $out ) {
 		return $out;
 	}
-	$out = '';
-	if ( ! defined( 'EA11Y_VERSION' ) ) {
-		return $out;
-	}
+	$out = array( 'head' => '', 'foot' => '' );
 	try {
+		// Site Kit registers its Analytics tag on template_redirect (priority 10), which the
+		// custom routes never reach. Run only Site Kit's Analytics registration here.
+		global $wp_filter;
+		if ( isset( $wp_filter['template_redirect'] ) ) {
+			foreach ( $wp_filter['template_redirect']->callbacks as $cbs ) {
+				foreach ( $cbs as $cb ) {
+					$fn = $cb['function'];
+					if ( is_array( $fn ) && is_object( $fn[0] ) && 0 === strpos( get_class( $fn[0] ), 'Google\\Site_Kit\\Modules\\Analytics_4' ) ) {
+						call_user_func( $fn );
+					}
+				}
+			}
+		}
 		do_action( 'wp_enqueue_scripts' );
-		if ( wp_script_is( 'ea11y-widget', 'enqueued' ) ) {
+
+		$gtag = class_exists( '\\Google\\Site_Kit\\Core\\Tags\\GTag' ) && defined( '\\Google\\Site_Kit\\Core\\Tags\\GTag::HANDLE' ) ? \Google\Site_Kit\Core\Tags\GTag::HANDLE : 'google_gtagjs';
+		if ( wp_script_is( $gtag, 'enqueued' ) ) {
+			$consent = "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}\n"
+				. "(function(){var c='';try{c=localStorage.getItem('edita_cookies')||'';}catch(e){}"
+				. "if(!c){try{var m=document.cookie.match(/(?:^|; )edita_ck=([^;]+)/);if(m)c=m[1];}catch(e){}}"
+				. "gtag('consent','default',{analytics_storage:c==='all'?'granted':'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});"
+				. "window.addEventListener('edita-consent',function(e){gtag('consent','update',{analytics_storage:e&&e.detail==='all'?'granted':'denied'});});})();";
+			ob_start();
+			echo "<!-- Edita: Google Analytics via Site Kit, with consent mode -->\n<script>" . $consent . "</script>\n"; // phpcs:ignore
+			wp_scripts()->do_items( array( $gtag ) );
+			$out['head'] = ob_get_clean();
+		}
+
+		if ( defined( 'EA11Y_VERSION' ) && wp_script_is( 'ea11y-widget', 'enqueued' ) ) {
 			ob_start();
 			wp_styles()->do_items( array( 'ea11y-widget-fonts' ) );
 			wp_scripts()->do_items( array( 'ea11y-widget' ) );
-			$out = ob_get_clean();
+			$out['foot'] = ob_get_clean();
 		}
 	} catch ( \Throwable $e ) {
-		$out = '';
+		if ( ob_get_level() ) {
+			ob_end_clean();
+		}
 	}
 	return $out;
 }
 
 function edita_site_extras( $html ) {
+	$fe   = edita_site_frontend();
 	$html = preg_replace( '#<link rel="icon"[^>]*>\s*#', '', $html );
-	$html = str_replace( '</head>', edita_site_icons() . '</head>', $html );
-	$ally = edita_site_ally();
-	if ( $ally ) {
+	if ( false === strpos( $html, 'googletagmanager.com/gtag/js' ) ) {
+		$html = str_replace( '</head>', edita_site_icons() . $fe['head'] . '</head>', $html );
+	} else {
+		$html = str_replace( '</head>', edita_site_icons() . '</head>', $html );
+	}
+	if ( $fe['foot'] ) {
 		$pos = strrpos( $html, '</body>' );
 		if ( false !== $pos ) {
-			$html = substr( $html, 0, $pos ) . $ally . substr( $html, $pos );
+			$html = substr( $html, 0, $pos ) . $fe['foot'] . substr( $html, $pos );
 		}
 	}
 	return $html;
