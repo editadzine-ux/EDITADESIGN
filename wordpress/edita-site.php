@@ -249,6 +249,22 @@ function edita_site_icons() {
 }
 
 /**
+ * Site Kit's own "exclude from tracking" decision (e.g. logged-in users).
+ * Site Kit normally enforces it with an opt-out script in wp_head, which the custom
+ * pages don't print, so here the tag is simply not loaded when tracking is disabled.
+ */
+function edita_site_ga_disabled( $module ) {
+	try {
+		$m = new \ReflectionMethod( $module, 'is_tracking_disabled' );
+		$m->setAccessible( true );
+		return (bool) $m->invoke( $module );
+	} catch ( \Throwable $e ) {
+		$set = get_option( 'googlesitekit_analytics-4_settings' );
+		return is_user_logged_in() && is_array( $set ) && ! empty( $set['trackingDisabled'] ) && in_array( 'loggedinUsers', (array) $set['trackingDisabled'], true );
+	}
+}
+
+/**
  * Front-end assets for the custom pages, which are printed without wp_head/wp_footer.
  * Runs WordPress's script queue once and prints only what the site needs:
  *  - head: the Google Analytics tag set up by Site Kit (same settings, same exclusions),
@@ -270,7 +286,9 @@ function edita_site_frontend() {
 				foreach ( $cbs as $cb ) {
 					$fn = $cb['function'];
 					if ( is_array( $fn ) && is_object( $fn[0] ) && 0 === strpos( get_class( $fn[0] ), 'Google\\Site_Kit\\Modules\\Analytics_4' ) ) {
-						call_user_func( $fn );
+						if ( ! edita_site_ga_disabled( $fn[0] ) ) {
+							call_user_func( $fn );
+						}
 					}
 				}
 			}
