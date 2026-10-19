@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Edita Site
  * Description: מציג את האתר החדש של Edita בעמוד הבית. התוכן נמשך מהריפו editadzine-ux/editadesign ב־GitHub. השבתת התוסף מחזירה את עמוד הבית הקודם.
- * Version: 1.11.0
+ * Version: 1.12.0
  * Author: Edita
  * Requires PHP: 7.4
  */
@@ -239,6 +239,15 @@ add_action( 'template_redirect', function () {
 
 /* Favicon from the WordPress site icon; Analytics and Ally are printed by edita_site_frontend(). */
 function edita_site_icons() {
+	if ( file_exists( ABSPATH . 'favicon.ico' ) && file_exists( ABSPATH . 'apple-touch-icon.png' ) ) {
+		$v = '?v=' . filemtime( ABSPATH . 'favicon.ico' );
+		return '<link rel="icon" href="/favicon.ico' . $v . '" sizes="48x48">' . "\n"
+			. '<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png' . $v . '">' . "\n"
+			. '<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png' . $v . '">' . "\n"
+			. '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png' . $v . '">' . "\n"
+			. '<link rel="manifest" href="/site.webmanifest">' . "\n"
+			. '<meta name="theme-color" content="#1E1E26">' . "\n";
+	}
 	if ( ! function_exists( 'has_site_icon' ) || ! has_site_icon() ) {
 		return '';
 	}
