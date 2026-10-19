@@ -929,7 +929,8 @@ textarea.inp{min-height:110px;resize:vertical}
 .ed blockquote{font-size:clamp(34px,9.4vw,46px)!important}
 .cs-stmt{font-size:clamp(32px,8.8vw,42px)!important}
 
-.bxg{grid-template-columns:minmax(0,1fr);grid-template-areas:"a" "b" "c" "d" "e" "f" "g" "h";grid-auto-rows:auto}
+.bxg{grid-template-columns:minmax(0,1fr);grid-template-areas:"a" "b" "c" "d" "e" "f" "h" "g";grid-auto-rows:auto}
+.mmenu{gap:2px;padding:24px}.mmenu a{font-size:24px;padding:7px 0}.mmenu .sig-menu{height:66px}.mmenu .mm-logo{margin-bottom:18px}.mmenu a.wa-btn{margin-top:16px;font-size:14px;min-height:42px}.mmenu .syne{margin-top:20px!important;font-size:12px!important}
 .bx{padding:24px}
 .bx-ill{height:52px!important}
 
