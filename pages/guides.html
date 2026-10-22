@@ -41,9 +41,9 @@ a:hover{color: rgb(185, 30, 52);}
 .ibtn:hover{border-color: var(--fg);}
 .sig{display: block; height: 58px; width: auto; overflow: visible;}
 .sig .sg-ink{fill: var(--fg);}
-.sig{animation: 14s ease-in-out 0s infinite normal none running sgFade;}
-.sig .sg-tri{fill: rgb(215, 38, 61); transform-box: fill-box; transform-origin: 50% 100%; animation: 14s cubic-bezier(0.3, 1.5, 0.5, 1) 0s infinite normal none running sgTri;}
-.sig .sgw{transform-box: fill-box; transform-origin: 0px 50%; transform: scaleX(0); animation: 14s cubic-bezier(0.55, 0.1, 0.35, 1) 0s infinite normal none running none;}
+.sig{animation: 28s linear 0s 1 normal forwards running sgFade2;}
+.sig .sg-tri{fill: rgb(215, 38, 61); transform-box: fill-box; transform-origin: 50% 100%; animation: 14s cubic-bezier(0.3, 1.5, 0.5, 1) 0s 2 normal forwards running sgTri;}
+.sig .sgw{transform-box: fill-box; transform-origin: 0px 50%; transform: scaleX(0); animation: 14s cubic-bezier(0.55, 0.1, 0.35, 1) 0s 2 normal forwards running none;}
 .sig .w1{animation-name: sgW1;}
 .sig .w2{animation-name: sgW2;}
 .sig .w3{animation-name: sgW3;}
@@ -103,9 +103,10 @@ header .wrap{height: 96px !important;}
  .fbird{display: none;}
 }
 html, body{margin: 0px; background: rgb(241, 234, 220);}
-@keyframes sgFade { 
-  0%, 79% { opacity: 1; }
-  91%, 100% { opacity: 0; }
+@keyframes sgFade2 { 
+  0%, 39.5% { opacity: 1; }
+  45.5%, 50% { opacity: 0; }
+  50.5%, 100% { opacity: 1; }
 }
 @keyframes sgTri { 
   0%, 29% { opacity: 0; transform: translateY(-60px) rotate(-90deg) scale(0.4); }

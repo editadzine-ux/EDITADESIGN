@@ -55,15 +55,16 @@ a{color:inherit}a:hover{color:#B91E34}
 .ed.dark .ctrl .sound:not(.on){background:#F1EADC;color:#1E1E26}
 .sig{display:block;height:58px;width:auto;overflow:visible}
 .sig .sg-ink{fill:var(--fg)}
-.sig{animation:sgFade 14s ease-in-out infinite}
-.sig .sg-tri{fill:#D7263D;transform-box:fill-box;transform-origin:50% 100%;animation:sgTri 14s cubic-bezier(.3,1.5,.5,1) infinite}
-.sig .sgw{transform-box:fill-box;transform-origin:0 50%;transform:scaleX(0);animation:14s cubic-bezier(.55,.1,.35,1) infinite}
+.sig{animation:sgFade2 28s linear 1 forwards}
+.sig .sg-tri{fill:#D7263D;transform-box:fill-box;transform-origin:50% 100%;animation:sgTri 14s cubic-bezier(.3,1.5,.5,1) 2 forwards}
+.sig .sgw{transform-box:fill-box;transform-origin:0 50%;transform:scaleX(0);animation:14s cubic-bezier(.55,.1,.35,1) 2 forwards}
 .sig .w1{animation-name:sgW1}.sig .w2{animation-name:sgW2}.sig .w3{animation-name:sgW3}
 @keyframes sgW1{0%,2%{transform:scaleX(0)}10%,100%{transform:scaleX(1)}}
 @keyframes sgW2{0%,9%{transform:scaleX(0)}23%,100%{transform:scaleX(1)}}
 @keyframes sgW3{0%,22%{transform:scaleX(0)}29%,100%{transform:scaleX(1)}}
 @keyframes sgTri{0%,29%{opacity:0;transform:translateY(-60px) rotate(-90deg) scale(.4)}36%,100%{opacity:1;transform:none}}
 @keyframes sgFade{0%,79%{opacity:1}91%,100%{opacity:0}}
+@keyframes sgFade2{0%,39.5%{opacity:1}45.5%,50%{opacity:0}50.5%,100%{opacity:1}}
 @media (min-width:981px){.sig{height:84px}}
 @media (max-width:700px){.sig{height:48px}}
 @media (prefers-reduced-motion:reduce){.sig,.sig .sgw,.sig .sg-tri{animation:none;transform:none;opacity:1}}
