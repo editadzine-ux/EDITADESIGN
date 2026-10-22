@@ -79,15 +79,15 @@ a{color:inherit}a:hover{color:#B91E34}
 .hdr-snd.on .eq i:nth-child(2){animation-delay:.2s}.hdr-snd.on .eq i:nth-child(3){animation-delay:.45s}.hdr-snd.on .eq i:nth-child(4){animation-delay:.1s}
 .hdr-snd.hero-snd{position:absolute;top:clamp(16px,1.8vw,28px);inset-inline-start:max(clamp(20px,4.4vw,64px),calc((100% - 1440px)/2 + clamp(20px,4.4vw,64px)));z-index:6;flex-direction:column;gap:5px;height:auto;padding:0;background:none;box-shadow:none;animation:none;color:#F1EADC;font:500 12px/1 'IBM Plex Sans Hebrew',sans-serif;letter-spacing:.04em;gap:7px}
 .hdr-snd.hero-snd:hover{transform:none}
-.hero-snd .hs-ic{width:48px;height:48px;background:rgba(30,30,38,.42);color:#F1EADC;box-shadow:inset 0 0 0 1px rgba(241,234,220,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:background .3s,transform .3s;animation:sndRing 2.8s ease-out 1.5s infinite}
-.hero-snd .hs-ic svg{width:21px;height:21px}
+.hero-snd .hs-ic{width:40px;height:40px;background:rgba(30,30,38,.42);color:#F1EADC;box-shadow:inset 0 0 0 1px rgba(241,234,220,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:background .3s,transform .3s;animation:sndRing 2.8s ease-out 1.5s infinite}
+.hero-snd .hs-ic svg{width:18px;height:18px}
 .hero-snd:hover .hs-ic{background:#D7263D;transform:scale(1.06)}
 .hero-snd .hs-lbl{opacity:.85;text-shadow:0 1px 6px rgba(0,0,0,.45)}
 .hero-snd .eq{display:none!important}
 .hdr-snd.hero-snd.on{background:none;box-shadow:none;color:#F1EADC}
 .hero-snd.on .hs-ic{background:rgba(232,168,42,.9);color:#1E1E26;box-shadow:none;animation:none}
 @keyframes sndRing{0%{box-shadow:inset 0 0 0 1px rgba(241,234,220,.35),0 0 0 0 rgba(241,234,220,.35)}70%,100%{box-shadow:inset 0 0 0 1px rgba(241,234,220,.35),0 0 0 10px rgba(241,234,220,0)}}
-@media (max-width:700px){.hdr-snd.hero-snd{top:12px;inset-inline-start:12px;font-size:11px;gap:5px}.hero-snd .hs-ic{width:42px;height:42px}.hero-snd .hs-ic svg{width:19px;height:19px}}
+@media (max-width:700px){.hdr-snd.hero-snd{top:10px;inset-inline-start:10px;font-size:10px;gap:4px}.hero-snd .hs-ic{width:32px;height:32px}.hero-snd .hs-ic svg{width:15px;height:15px}}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(215,38,61,.45)}50%{box-shadow:0 0 0 14px rgba(215,38,61,0)}}
 .eq{display:inline-flex;align-items:flex-end;gap:3px;height:16px}
 .eq i{display:block;width:3px;height:30%;background:currentColor;border-radius:2px}
