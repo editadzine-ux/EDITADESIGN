@@ -86,7 +86,7 @@ a{color:inherit}a:hover{color:#B91E34}
 .hdr-snd.hero-snd.on{background:none;box-shadow:none;color:#F1EADC}
 .hero-snd.on .hs-ic{background:rgba(232,168,42,.9);color:#1E1E26;box-shadow:none;animation:none}
 @keyframes sndRing{0%{box-shadow:inset 0 0 0 1px rgba(241,234,220,.35),0 0 0 0 rgba(241,234,220,.35)}70%,100%{box-shadow:inset 0 0 0 1px rgba(241,234,220,.35),0 0 0 10px rgba(241,234,220,0)}}
-@media (max-width:700px){.hero-snd{display:none}}
+@media (max-width:700px){.hdr-snd.hero-snd{top:12px;inset-inline-start:12px;font-size:11px;gap:5px}.hero-snd .hs-ic{width:42px;height:42px}.hero-snd .hs-ic svg{width:19px;height:19px}}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(215,38,61,.45)}50%{box-shadow:0 0 0 14px rgba(215,38,61,0)}}
 .eq{display:inline-flex;align-items:flex-end;gap:3px;height:16px}
 .eq i{display:block;width:3px;height:30%;background:currentColor;border-radius:2px}
@@ -877,7 +877,7 @@ textarea.inp{min-height:110px;resize:vertical}
 @media (max-width:700px){
 .hero{padding-top:0;padding-bottom:80px}
 .stage{order:1;position:relative;margin-inline:calc(-1*clamp(20px,4.4vw,64px))}
-.eye-frame{aspect-ratio:390/500;height:auto;min-height:0;max-height:none;border-radius:0;box-shadow:none}
+.eye-frame{aspect-ratio:390/470;width:min(100%,calc(62svh*390/470));margin-inline:auto;height:auto;min-height:0;max-height:none;border-radius:0;box-shadow:none}
 .eye-frame video{object-fit:cover}
 .ctrl{position:static;margin:0;padding:10px 16px 0;flex-wrap:wrap;gap:10px}
 .sound{flex:none;min-height:0}
