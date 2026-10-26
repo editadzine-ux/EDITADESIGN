@@ -40,6 +40,7 @@ a{color:inherit}a:hover{color:#B91E34}
 .eye-frame{position:relative;border-radius:28px;overflow:hidden;background:#F1EADC;aspect-ratio:1920/700;animation:eyeOpen 1.6s cubic-bezier(.7,0,.15,1) .25s both;box-shadow:0 40px 80px -40px rgba(30,30,38,.45)}
 @keyframes eyeOpen{0%{clip-path:ellipse(46% .4% at 50% 50%)}45%{clip-path:ellipse(48% 36% at 50% 50%)}100%{clip-path:ellipse(85% 95% at 50% 50%)}}
 .eye-frame video{width:100%;height:100%;display:block;object-fit:cover;background:#F1EADC}
+.soc{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}.soc-a{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px 0 14px;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--line);color:var(--fg);text-decoration:none;font:600 15px/1 'IBM Plex Sans Hebrew',sans-serif;direction:ltr;transition:background .3s,color .3s,box-shadow .3s}.soc-a:hover{background:#1E1E26;color:#F1EADC;box-shadow:none}
 .hero-stats>div+div{border-inline-start:1px solid var(--line);padding-inline-start:clamp(28px,3.4vw,52px)}
 .bigplay{position:absolute;inset:0;margin:auto;width:118px;height:118px;border-radius:50%;border:0;background:#1E1E26;color:#F1EADC;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
 .bigplay:hover{transform:scale(1.07)}
