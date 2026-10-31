@@ -14,7 +14,7 @@ a{color:inherit}a:hover{color:#B91E34}
 .eyebrow{font-family:'Syne',sans-serif;font-size:12px;letter-spacing:.22em;text-transform:uppercase;font-weight:600}
 .chap{display:inline-flex;align-items:center;gap:14px;margin:0 0 26px}
 .chap-n{font:700 13px/1 'Syne',sans-serif;letter-spacing:.16em;padding:8px 12px;border-radius:999px;border:1.5px solid currentColor;direction:ltr}
-.chap-t{font-size:15px;font-weight:500}
+.chap-t{font-size:15px;font-weight:500}h2.chap{font-size:inherit;font-weight:inherit;line-height:inherit;letter-spacing:inherit}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 28px;border-radius:999px;font:500 16px/1 'IBM Plex Sans Hebrew',sans-serif;text-decoration:none;cursor:pointer;border:1.5px solid var(--fg);transition:transform .4s cubic-bezier(.2,.8,.2,1),background .3s,color .3s,border-color .3s}
 .btn:hover{transform:translateY(-3px)}
 .btn-ink{background:#1E1E26;color:#F1EADC;border-color:#1E1E26}
