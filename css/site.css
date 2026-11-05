@@ -834,7 +834,7 @@ textarea.inp{min-height:110px;resize:vertical}
 .ix-row:after{display:none}
 .ix{border-top:0}
 .ix:hover .ix-row{opacity:1}
-.ix-row{position:sticky;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"m m" "name no" "client client" "tags arrow";gap:6px 12px;padding:14px 14px 18px;margin-bottom:22px;border:0;border-radius:26px;background:#26262E;box-shadow:0 -14px 40px -18px rgba(0,0,0,.6)}
+.ix-row{position:sticky;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"m m" "name no" "client client" "tags arrow";gap:6px 12px;padding:14px 14px 18px;margin-bottom:44px;border:0;border-radius:26px;background:#26262E;box-shadow:0 -14px 40px -18px rgba(0,0,0,.6)}
 .ix-media{display:block;grid-area:m;aspect-ratio:4/3;border-radius:18px;overflow:hidden;margin-bottom:12px}
 .ix-media img{width:100%;height:100%;object-fit:cover;display:block}
 .ix-no{grid-area:no;align-self:center;justify-self:end}
