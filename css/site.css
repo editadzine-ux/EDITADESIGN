@@ -834,15 +834,17 @@ textarea.inp{min-height:110px;resize:vertical}
 .ix-row:after{display:none}
 .ix{border-top:0}
 .ix:hover .ix-row{opacity:1}
-.ix-row{position:sticky;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"m m" "name no" "client client" "tags tags";gap:6px 12px;padding:14px 14px 22px;margin-bottom:22px;border:0;border-radius:26px;background:#26262E;box-shadow:0 -14px 40px -18px rgba(0,0,0,.6)}
+.ix-row{position:sticky;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"m m" "name no" "client client" "tags arrow";gap:6px 12px;padding:14px 14px 18px;margin-bottom:22px;border:0;border-radius:26px;background:#26262E;box-shadow:0 -14px 40px -18px rgba(0,0,0,.6)}
 .ix-media{display:block;grid-area:m;aspect-ratio:4/3;border-radius:18px;overflow:hidden;margin-bottom:12px}
 .ix-media img{width:100%;height:100%;object-fit:cover;display:block}
-.ix-no{grid-area:no;align-self:center}
+.ix-no{grid-area:no;align-self:center;justify-self:end}
 .ix-name{grid-area:name;font-size:clamp(24px,6.6vw,30px)}
 .ix-row:hover .ix-name{transform:none;color:#F1EADC}
 .ix-client{grid-area:client;font-size:15px}
-.ix-tags{grid-area:tags;font-size:13px}
-.ix-arrow{display:none}
+.ix-tags{grid-area:tags;font-size:13px;align-self:center}
+.ix-arrow{grid-area:arrow;justify-self:end;align-self:center;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px 0 13px;border-radius:999px;background:#E8A82A;color:#1E1E26!important;font:700 13px/1 'IBM Plex Sans Hebrew',sans-serif;opacity:1!important;transform:none!important;box-shadow:0 6px 16px -6px rgba(232,168,42,.6);white-space:nowrap}
+.ix-arrow:before{content:'לפרויקט'}
+.ix-row:active .ix-arrow{transform:scale(.96)!important}
 .pf .pf-media{aspect-ratio:4/5!important}
 .pf-over{opacity:0!important}
 .t-care{grid-column:auto}
