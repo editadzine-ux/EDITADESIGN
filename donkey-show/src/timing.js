@@ -6,7 +6,7 @@ DS.DEFAULT_DATA = {
  "musicEnd": 158.45,
  "duration": 166.0,
  "markers": {
-  "open": 1.5,
+  "open": 3.4,
   "inhale": 8.55,
   "instr": [
    [
@@ -333,14 +333,14 @@ DS.DEFAULT_DATA = {
    "k": "curtain"
   },
   {
-   "t": 1.4,
+   "t": 3.3,
    "k": "curtain",
    "to": "wide",
-   "d": 2.6,
+   "d": 2.4,
    "e": "io"
   },
   {
-   "t": 4.5,
+   "t": 5.75,
    "k": "wide"
   },
   {

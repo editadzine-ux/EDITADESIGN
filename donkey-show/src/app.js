@@ -4,7 +4,7 @@
   const DS = window.DS;
   const params = new URLSearchParams(location.search);
   const RENDER = params.has('render');
-  const STORE = 'donkey-show-timing-v6';
+  const STORE = 'donkey-show-timing-v7';
   const $ = (s) => document.querySelector(s);
 
   // ---------- data ----------
@@ -44,6 +44,7 @@
   const sub = $('#sub');
   const badge = $('#badge');
   const credit = $('#credit');
+  const title = $('#title');
 
   // ---------- camera: static framings, framings that track faces/hands, and animated moves ----------
   const SHOTS = {
@@ -143,6 +144,13 @@
     if (!c) for (const q of data.cues) if (t > q.end && t < q.end + 0.35) c = q;
     const txt = c ? plain(c.text) : '';
     if (txt !== lastSub) { sub.textContent = txt; sub.style.opacity = txt ? 1 : 0; lastSub = txt; }
+    // opening title on the closed curtain: fades and settles in, line by line, gone before the curtain moves
+    { const op = data.markers.open, cl = (x) => Math.max(0, Math.min(1, x)), ez = (u) => u * u * (3 - 2 * u);
+      const a1 = ez(cl((t - 0.25) / 0.6)), a2 = ez(cl((t - 0.75) / 0.6)), out = 1 - ez(cl((t - (op - 0.55)) / 0.45));
+      title.style.opacity = (Math.max(a1, 0) * out).toFixed(3);
+      title.style.transform = `translate(-50%, -50%) scale(${(0.97 + 0.03 * a1 + 0.012 * cl(t / op)).toFixed(4)})`;
+      title.children[1].style.width = (420 * a2) + 'px';
+      title.children[2].style.opacity = a2.toFixed(3); }
     const ct = data.musicEnd + 3.15, co = Math.max(0, Math.min(1, (t - ct) / 0.8));
     credit.style.opacity = co.toFixed(3);
     credit.style.transform = `translate(-50%, -50%) scale(${(0.96 + 0.04 * co).toFixed(3)})`;

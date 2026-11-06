@@ -39,10 +39,10 @@ b = np.array(json.load(open(beats))['beats'])
 k = np.round((b - b[0]) / np.median(np.diff(b)))
 slope, icpt = np.polyfit(k, b, 1)
 data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd': 158.45, 'duration': 166.0,
-  'markers': {'open': 1.5, 'inhale': 8.55, 'instr': [[107.2, 157.6]]}, 'cues': cues,
+  'markers': {'open': 3.4, 'inhale': 8.55, 'instr': [[107.2, 157.6]]}, 'cues': cues,
   'shots': [{'t': 0, 'k': 'curtain'},
-            {'t': 1.4, 'k': 'curtain', 'to': 'wide', 'd': 2.6, 'e': 'io'},
-            {'t': 4.5, 'k': 'wide'},
+            {'t': 3.3, 'k': 'curtain', 'to': 'wide', 'd': 2.4, 'e': 'io'},
+            {'t': 5.75, 'k': 'wide'},
             {'t': 8.4, 'k': 'wide', 'to': 'two', 'd': 1.1, 'e': 'io'},
             {'t': 9.55, 'k': 'wide', 'pulse': 1},
             {'t': 11.2, 'k': 'wide', 'to': 'two', 'd': 0.6, 'e': 'out'},
