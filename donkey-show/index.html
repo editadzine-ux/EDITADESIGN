@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>שני חמורים על הבמה</title>
+<style>
+  @font-face { font-family: 'Rubik'; font-weight: 500; src: url(fonts/rubik-hebrew-500-normal.woff2) format('woff2'); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+  @font-face { font-family: 'Rubik'; font-weight: 500; src: url(fonts/rubik-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+  @font-face { font-family: 'Rubik'; font-weight: 700; src: url(fonts/rubik-hebrew-700-normal.woff2) format('woff2'); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+  @font-face { font-family: 'Rubik'; font-weight: 700; src: url(fonts/rubik-latin-700-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+  :root { --ink: #2b2522; --paper: #f8eddb; --panel: #fffaf1; --line: #e4d6c0; --accent: #c4574b; --teal: #6c9f98; --mustard: #e2ae45; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #efe5d4; color: var(--ink); font-family: 'Rubik', system-ui, sans-serif; font-weight: 500; }
+  main { max-width: 1280px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 20px; margin: 4px 0 12px; font-weight: 700; }
+  #stageWrap { position: relative; width: 100%; overflow: hidden; border: 3px solid var(--ink); border-radius: 6px; background: var(--paper); }
+  #stage { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; direction: ltr; }
+  #svg { display: block; width: 1920px; height: 1080px; }
+  /* subtitles: max two lines, RTL, flat */
+  #sub { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); width: 1500px; text-align: center; direction: rtl;
+         font: 700 56px/1.22 'Rubik', sans-serif; color: var(--ink); transition: opacity .12s;
+         paint-order: stroke fill; -webkit-text-stroke: 12px #fbf3e4; text-stroke: 12px #fbf3e4;
+         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #badge { position: absolute; top: 26px; right: 30px; direction: rtl; font: 700 30px 'Rubik', sans-serif; color: #fffaf1; background: rgba(43,37,34,.78); padding: 8px 18px; border-radius: 10px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 6px; }
+  button, .file { font: inherit; font-size: 15px; background: var(--panel); border: 2px solid var(--ink); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--ink); }
+  button.primary { background: var(--ink); color: var(--panel); }
+  button:hover, .file:hover { background: #fff; }
+  button.primary:hover { background: #443b37; }
+  .file input { display: none; }
+  #scrub { flex: 1 1 240px; accent-color: var(--accent); }
+  #time { font-variant-numeric: tabular-nums; direction: ltr; min-width: 150px; text-align: center; }
+  #tl { width: 100%; height: 64px; display: block; border: 2px solid var(--ink); border-radius: 6px; cursor: pointer; direction: ltr; }
+  .legend { display: flex; gap: 14px; font-size: 13px; margin: 6px 0 2px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-inline-end: 4px; }
+  #modeNote, #status { font-size: 14px; margin: 4px 0; }
+  #status { color: var(--accent); min-height: 1.3em; }
+  details { background: var(--panel); border: 2px solid var(--ink); border-radius: 8px; padding: 10px 12px; margin-top: 12px; }
+  summary { cursor: pointer; font-weight: 700; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 8px 0; font-size: 14px; }
+  .row input[type=number] { width: 90px; }
+  input, select, textarea { font: inherit; font-size: 14px; border: 1.5px solid #b9a98f; border-radius: 6px; padding: 3px 6px; background: #fff; color: var(--ink); }
+  .tablewrap { max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: start; }
+  th { position: sticky; top: 0; background: #f3e9d8; }
+  td.id { font-family: ui-monospace, monospace; direction: ltr; color: #7a6d5f; }
+  td.tx { min-width: 220px; }
+  td input { width: 80px; direction: ltr; }
+  td.btns button { padding: 2px 7px; margin-inline-start: 3px; font-size: 13px; }
+  tr.on { background: #fbe7b8; }
+  textarea { width: 100%; height: 160px; direction: ltr; font-family: ui-monospace, monospace; font-size: 12px; }
+  .help { font-size: 13px; line-height: 1.55; color: #5a4f46; }
+  kbd { border: 1px solid #b9a98f; border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: #fff; font-size: 12px; }
+  /* render mode: only the 1920x1080 frame */
+  body.render { background: var(--paper); }
+  body.render main { max-width: none; padding: 0; margin: 0; }
+  body.render h1, body.render .ui { display: none !important; }
+  body.render #stageWrap { width: 1920px; height: 1080px; border: 0; border-radius: 0; }
+  @media (max-width: 640px) { h1 { font-size: 17px; } td.tx { min-width: 160px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1 class="ui">שני חמורים על הבמה · קליפ אנימציה</h1>
+  <div id="stageWrap">
+    <div id="stage">
+      <svg id="svg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="sub"></div>
+      <div id="badge" hidden>תצוגת ניסיון אילמת · תנועות פה להמחשה</div>
+    </div>
+  </div>
+
+  <div class="ui">
+    <div class="controls">
+      <button id="play" class="primary">▶ נגן</button>
+      <button id="pause">❚❚ השהה</button>
+      <button id="replay">↺ מההתחלה</button>
+      <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="מיקום">
+      <span id="time">0:00.00</span>
+      <label class="file">טען MP3 / WAV<input id="file" type="file" accept="audio/mpeg,audio/wav,audio/*"></label>
+    </div>
+    <canvas id="tl" aria-label="ציר זמן"></canvas>
+    <div class="legend"><span><i style="background:#6c9f98"></i>הגבוה</span><span><i style="background:#e2ae45"></i>הנמוך</span><span><i style="background:#b98aa0"></i>שניהם</span><span>שורה עליונה: שירה · תחתונה: דיבור · קווים שחורים: חיתוכי מצלמה</span></div>
+    <div id="modeNote"></div>
+    <div id="status"></div>
+
+    <details open>
+      <summary>עריכת זמני שורות ודוברים</summary>
+      <p class="help">הזמנים נגזרו אוטומטית מערוץ השירה שהופרד מהשיר (פיצול לפי משפטים, לא זיהוי מילים), ולכן כדאי לעבור עליהם באוזן.
+        כל תנועה, מבט וגאג מעוגנים לשורה, כך ששינוי זמן של שורה מזיז גם את המשחק שלה. השינויים נשמרים בדפדפן.<br>
+        <b>תזמון בהקשה:</b> סמנו "מצב הקשה", נגנו, ולחצו <kbd>J</kbd> ברגע שכל שורה מתחילה (ו-<kbd>K</kbd> כשהיא נגמרת). <kbd>רווח</kbd> = נגן/השהה.</p>
+      <div class="row">
+        <label><input type="checkbox" id="tap"> מצב הקשה</label>
+        <label><input type="checkbox" id="mock"> תנועות פה מדומות (בלי מעטפת שירה)</label>
+        <label>BPM <input id="bpm" type="number" step="0.01"></label>
+        <label>פעימה ראשונה (שנ׳) <input id="beat0" type="number" step="0.01"></label>
+      </div>
+      <div class="row">
+        <button id="stretch">מתח זמנים לאורך הקובץ</button>
+        <button id="export">ייצוא תזמון JSON</button>
+        <label class="file">ייבוא תזמון<input id="import" type="file" accept="application/json"></label>
+        <button id="reset">איפוס</button>
+      </div>
+      <div class="tablewrap">
+        <table id="cues"><thead><tr><th>מזהה</th><th>דובר</th><th>התחלה</th><th>סיום</th><th>טקסט (מוצג בלי ניקוד)</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+    </details>
+    <details>
+      <summary>מתקדם: סמנים וחיתוכי מצלמה</summary>
+      <p class="help">shots: רשימת חיתוכים (t = זמן, k = wide / two / cuT / cuS). markers.open = פתיחת הווילון, inhale = שאיפת האוויר, instr = קטע ההדרן האינסטרומנטלי.</p>
+      <textarea id="adv"></textarea>
+      <div class="row"><button id="applyAdv">החל</button></div>
+    </details>
+  </div>
+  <audio id="audio" preload="auto"></audio>
+</main>
+<script src="src/timing.js"></script>
+<script src="src/rig.js"></script>
+<script src="src/scene.js"></script>
+<script src="src/choreo.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>

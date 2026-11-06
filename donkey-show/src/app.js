@@ -1,0 +1,282 @@
+/* Player: audio is the master clock (play/pause/seek/replay), camera shots, Hebrew RTL subtitles,
+   timeline editor (line times, speakers, tap-to-time), and a headless render hook (DS.renderAt). */
+(function () {
+  const DS = window.DS;
+  const params = new URLSearchParams(location.search);
+  const RENDER = params.has('render');
+  const STORE = 'donkey-show-timing-v1';
+  const $ = (s) => document.querySelector(s);
+
+  // ---------- data ----------
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  let data = clone(DS.DEFAULT_DATA);
+  if (!RENDER) {
+    try { const s = localStorage.getItem(STORE); if (s) data = Object.assign(clone(DS.DEFAULT_DATA), JSON.parse(s)); } catch (e) { /* storage unavailable */ }
+  }
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(data)); } catch (e) { } };
+  const choreo = new DS.Choreo(data);
+  const refresh = () => { data.cues.sort((a, b) => a.start - b.start); data.shots.sort((a, b) => a.t - b.t); choreo.setData(data); save(); };
+
+  // strip niqqud/cantillation for display (the pointed source text is kept untouched)
+  const plain = (s) => s.replace(/[֑-ׇֽֿׁׂׅׄ]/g, '');
+
+  // ---------- vocal envelope (mouth driver) ----------
+  let env = null, envFps = 60, envSource = 'none';
+  function useBundledEnvelope() {
+    const s = DS.VOCAL_ENV.data; env = new Float32Array(s.length);
+    for (let i = 0; i < s.length; i++) env[i] = (s.charCodeAt(i) - 48) / 63;
+    envFps = DS.VOCAL_ENV.fps; envSource = 'bundled';
+  }
+  DS.envelope = (t) => {
+    if (!env || mockMouths) return null;
+    const x = t * envFps, i = Math.floor(x);
+    if (i < 0 || i >= env.length - 1) return 0;
+    return env[i] + (env[i + 1] - env[i]) * (x - i);
+  };
+  let mockMouths = false;
+
+  // ---------- stage ----------
+  const svg = $('#svg');
+  const stage = DS.buildStage(svg);
+  const T = new DS.Donkey('T', stage.actors);
+  const S = new DS.Donkey('S', stage.actors);
+  const sub = $('#sub');
+  const badge = $('#badge');
+
+  const SHOTS = {
+    wide: { s: 0.9, cx: 960, cy: 575 },
+    two: { s: 1.15, cx: 965, cy: 470 },
+    cuT: { s: 1.5, cx: 730, cy: 410 },
+    cuS: { s: 1.95, cx: 1345, cy: 515 },
+  };
+
+  function earLag(id, t) {
+    const a = choreo.pose(id, t), b = choreo.pose(id, t - 0.07), c = choreo.pose(id, t - 0.14);
+    const hy = (p) => p.y + p.hipDy + p.headDy, hr = (p) => p.headRot + p.lean;
+    const dy = (hy(a) - hy(b)) * 0.9 + (hy(b) - hy(c)) * 0.5;
+    const dr = (hr(a) - hr(b)) * 1.2 + (hr(b) - hr(c)) * 0.6;
+    return { rot: -dr * 1.4 + dy * 0.35 + Math.sin(t * 2.1 + (id === 'T' ? 0 : 1)) * 1.5, bend: dy * 0.6 - dr * 0.8 };
+  }
+
+  let lastSub = null;
+  let lastT = 0;
+  function renderAt(t) {
+    lastT = t;
+    const pT = choreo.pose('T', t), pS = choreo.pose('S', t);
+    T.apply(pT, earLag('T', t));
+    S.apply(pS, earLag('S', t));
+    DS.poseStage(stage, choreo.stage(t));
+    DS.poseOrchestra(stage.orch, choreo.orchestra(t));
+    const sh = SHOTS[choreo.shot(t).k] || SHOTS.wide;
+    stage.world.setAttribute('transform', `translate(960,540) scale(${sh.s}) translate(${-sh.cx},${-sh.cy})`);
+    // subtitles: the current line, or keep the previous one briefly across tiny gaps
+    let c = choreo.anyActive(t);
+    if (!c) for (const q of data.cues) if (t > q.end && t < q.end + 0.35) c = q;
+    const txt = c ? plain(c.text) : '';
+    if (txt !== lastSub) { sub.textContent = txt; sub.style.opacity = txt ? 1 : 0; lastSub = txt; }
+  }
+  DS.renderAt = renderAt;
+  // QA: where are the ears / whole characters on screen right now?
+  DS.frameCheck = () => {
+    const out = { shot: choreo.shot(lastT).k };
+    for (const [k, d] of [['T', T], ['S', S]]) {
+      const ears = d.earG.map((e) => e.o.getBoundingClientRect());
+      const body = d.root.getBoundingClientRect();
+      out[k] = { earTop: Math.min(...ears.map((r) => r.top)), earL: Math.min(...ears.map((r) => r.left)), earR: Math.max(...ears.map((r) => r.right)),
+        top: body.top, left: body.left, right: body.right, bottom: body.bottom };
+    }
+    return out;
+  };
+  DS.data = () => data;
+
+  if (RENDER) {
+    document.body.classList.add('render');
+    useBundledEnvelope();
+    if (params.has('mock')) { mockMouths = true; badge.hidden = false; }
+    renderAt(parseFloat(params.get('t') || '0'));
+    window.__ready = document.fonts.ready.then(() => true);
+    return;
+  }
+
+  // ---------- audio clock ----------
+  const audio = $('#audio');
+  let haveAudio = false, demoClock = { playing: false, base: 0, t0: 0 };
+  const DUR = () => (haveAudio && isFinite(audio.duration) ? audio.duration : data.duration || 90);
+  const now = () => (haveAudio ? audio.currentTime : demoClock.playing ? demoClock.base + (performance.now() - demoClock.t0) / 1000 : demoClock.base);
+  const playing = () => (haveAudio ? !audio.paused : demoClock.playing);
+
+  function setStatus(msg) { $('#status').textContent = msg; }
+  function setMode() {
+    badge.hidden = haveAudio && !mockMouths;
+    $('#modeNote').textContent = haveAudio
+      ? (envSource === 'bundled' ? 'שיר מצורף · תנועות פה לפי ערוץ השירה שהופרד מהשיר' : 'קובץ שנטען · תנועות פה לפי עוצמת המיקס — יש לכוונן זמני שורות')
+      : 'תצוגת ניסיון אילמת — תזמונים ותנועות פה להמחשה בלבד';
+  }
+
+  audio.addEventListener('loadedmetadata', () => { haveAudio = true; setMode(); drawTimeline(); setStatus(`אודיו נטען · ${fmt(audio.duration)}`); });
+  audio.addEventListener('error', () => { if (!haveAudio) { setStatus('לא נמצא קובץ שיר — מצב תצוגה אילמת'); setMode(); } });
+  useBundledEnvelope();
+  audio.src = 'audio/song.mp3';
+
+  $('#file').addEventListener('change', async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    audio.src = URL.createObjectURL(f);
+    setStatus('מחשב מעטפת עוצמה מהקובץ…');
+    try {
+      const buf = await f.arrayBuffer();
+      const ac = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 44100, 44100);
+      const ab = await ac.decodeAudioData(buf);
+      const ch = ab.getChannelData(0), hop = Math.floor(ab.sampleRate / 60), n = Math.floor(ch.length / hop);
+      const db = new Float32Array(n);
+      for (let i = 0; i < n; i++) { let s = 0; for (let j = 0; j < hop; j++) { const v = ch[i * hop + j]; s += v * v; } db[i] = 10 * Math.log10(s / hop + 1e-10); }
+      const sorted = Array.from(db).sort((a, b) => a - b), hi = sorted[Math.floor(n * 0.97)], lo = hi - 18;
+      env = db.map((v) => Math.max(0, Math.min(1, (v - lo) / (hi - lo)))); envFps = 60; envSource = 'file';
+      setMode(); setStatus(`נטען: ${f.name}. זמני השורות עדיין של השיר המקורי — אפשר למתוח או לתזמן בהקשה.`);
+    } catch (err) { setStatus('לא הצלחתי לפענח את הקובץ: ' + err.message); }
+  });
+
+  function play() {
+    if (haveAudio) audio.play();
+    else { demoClock.t0 = performance.now(); demoClock.playing = true; }
+  }
+  function pause() {
+    if (haveAudio) audio.pause();
+    else { demoClock.base = now(); demoClock.playing = false; }
+  }
+  function seek(t) {
+    t = Math.max(0, Math.min(DUR(), t));
+    if (haveAudio) audio.currentTime = t; else { demoClock.base = t; demoClock.t0 = performance.now(); }
+  }
+  $('#play').onclick = play;
+  $('#pause').onclick = pause;
+  $('#replay').onclick = () => { seek(0); play(); };
+  $('#mock').onchange = (e) => { mockMouths = e.target.checked; setMode(); };
+
+  const fmt = (t) => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
+
+  // ---------- timeline strip ----------
+  const tl = $('#tl'), tctx = tl.getContext('2d');
+  const COL = { T: '#6c9f98', S: '#e2ae45', both: '#b98aa0' };
+  function drawTimeline() {
+    const W = (tl.width = tl.clientWidth * devicePixelRatio), H = (tl.height = 64 * devicePixelRatio), d = DUR();
+    tctx.clearRect(0, 0, W, H);
+    tctx.fillStyle = '#efe4d2'; tctx.fillRect(0, 0, W, H);
+    // beat ticks per bar
+    tctx.fillStyle = '#d8cab3';
+    for (let b = 0; ; b += 4) { const x = ((data.beat0 + (b * 60) / data.bpm) / d) * W; if (x > W) break; tctx.fillRect(x, 0, 1, H); }
+    for (const c of data.cues) {
+      tctx.fillStyle = COL[c.who];
+      const x0 = (c.start / d) * W, x1 = (c.end / d) * W;
+      tctx.fillRect(x0, c.kind === 'sing' ? 8 * devicePixelRatio : 26 * devicePixelRatio, Math.max(2, x1 - x0), 16 * devicePixelRatio);
+    }
+    tctx.fillStyle = '#2b2522';
+    for (const s of data.shots) { const x = (s.t / d) * W; tctx.fillRect(x, 46 * devicePixelRatio, 2, 14 * devicePixelRatio); }
+    const px = (now() / d) * W; tctx.fillStyle = '#c0392b'; tctx.fillRect(px - 1, 0, 3, H);
+  }
+  tl.addEventListener('pointerdown', (e) => { const r = tl.getBoundingClientRect(); seek(((e.clientX - r.left) / r.width) * DUR()); });
+
+  // ---------- cue editor ----------
+  const tbody = $('#cues tbody');
+  let activeRow = null;
+  function buildEditor() {
+    tbody.innerHTML = '';
+    data.cues.forEach((c, i) => {
+      const tr = document.createElement('tr'); tr.dataset.i = i;
+      tr.innerHTML = `<td class="id">${c.id}</td>
+        <td><select>${['T', 'S', 'both'].map((w) => `<option value="${w}" ${w === c.who ? 'selected' : ''}>${{ T: 'גבוה', S: 'נמוך', both: 'שניהם' }[w]}</option>`).join('')}</select></td>
+        <td><input type="number" step="0.01" class="st" value="${c.start.toFixed(2)}"></td>
+        <td><input type="number" step="0.01" class="en" value="${c.end.toFixed(2)}"></td>
+        <td class="tx" dir="rtl">${plain(c.text)}</td>
+        <td class="btns"><button class="go" title="קפוץ לשורה">▶</button><button class="setS" title="התחלה = עכשיו">⇤</button><button class="setE" title="סיום = עכשיו">⇥</button></td>`;
+      const sel = tr.querySelector('select');
+      sel.onchange = () => { c.who = sel.value; refresh(); drawTimeline(); };
+      tr.querySelector('.st').onchange = (e) => { c.start = +e.target.value; refresh(); drawTimeline(); };
+      tr.querySelector('.en').onchange = (e) => { c.end = +e.target.value; refresh(); drawTimeline(); };
+      tr.querySelector('.go').onclick = () => seek(c.start - 0.5);
+      tr.querySelector('.setS').onclick = () => { c.start = +now().toFixed(2); refresh(); buildEditor(); drawTimeline(); };
+      tr.querySelector('.setE').onclick = () => { c.end = +now().toFixed(2); refresh(); buildEditor(); drawTimeline(); };
+      tbody.appendChild(tr);
+    });
+    $('#bpm').value = data.bpm; $('#beat0').value = data.beat0;
+    $('#adv').value = JSON.stringify({ markers: data.markers, shots: data.shots, musicEnd: data.musicEnd }, null, 1);
+  }
+  $('#bpm').onchange = (e) => { data.bpm = +e.target.value; refresh(); drawTimeline(); };
+  $('#beat0').onchange = (e) => { data.beat0 = +e.target.value; refresh(); drawTimeline(); };
+  $('#applyAdv').onclick = () => {
+    try { const o = JSON.parse($('#adv').value); Object.assign(data, o); refresh(); drawTimeline(); setStatus('עודכן'); }
+    catch (e) { setStatus('JSON לא תקין: ' + e.message); }
+  };
+  $('#stretch').onclick = () => {
+    if (!haveAudio) return setStatus('צריך קודם לטעון אודיו');
+    const last = Math.max(...data.cues.map((c) => c.end)), k = (audio.duration * 0.97) / last;
+    data.cues.forEach((c) => { c.start = +(c.start * k).toFixed(2); c.end = +(c.end * k).toFixed(2); });
+    data.shots.forEach((s) => (s.t = +(s.t * k).toFixed(2)));
+    for (const key of ['open', 'inhale']) data.markers[key] = +(data.markers[key] * k).toFixed(2);
+    if (data.markers.instr) data.markers.instr = data.markers.instr.map(([a, b]) => [+(a * k).toFixed(2), +(b * k).toFixed(2)]);
+    data.musicEnd = +(audio.duration - 0.3).toFixed(2);
+    refresh(); buildEditor(); drawTimeline(); setStatus(`הזמנים נמתחו פי ${k.toFixed(3)} — מומלץ לכוונן בהקשה`);
+  };
+  $('#reset').onclick = () => { if (!confirm('לחזור לזמנים המקוריים?')) return; data = clone(DS.DEFAULT_DATA); choreo.setData(data); save(); buildEditor(); drawTimeline(); };
+  $('#export').onclick = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
+    a.download = 'donkey-show-timing.json'; a.click();
+  };
+  $('#import').onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try { data = Object.assign(clone(DS.DEFAULT_DATA), JSON.parse(await f.text())); refresh(); buildEditor(); drawTimeline(); setStatus('תזמון יובא'); }
+    catch (err) { setStatus('קובץ לא תקין'); }
+  };
+
+  // tap timing: J = next line starts now, K = current line ends now
+  let tapIdx = 0;
+  $('#tap').onchange = (e) => { tapIdx = 0; for (let i = 0; i < data.cues.length; i++) if (data.cues[i].start < now()) tapIdx = i + 1; setStatus(e.target.checked ? `מצב הקשה פעיל · J = התחלת שורה ${data.cues[tapIdx] ? data.cues[tapIdx].id : '-'}, K = סיום השורה הנוכחית` : ''); };
+  window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.code === 'Space') { e.preventDefault(); playing() ? pause() : play(); }
+    if (!$('#tap').checked) return;
+    const t = +now().toFixed(2);
+    if (e.key === 'j' || e.key === 'J' || e.key === 'ח') {
+      const c = data.cues[tapIdx]; if (!c) return;
+      const len = c.end - c.start; c.start = t; c.end = t + len;
+      const prev = data.cues[tapIdx - 1]; if (prev && prev.end > t) prev.end = +(t - 0.05).toFixed(2);
+      tapIdx++; choreo.setData(data); save(); buildEditor(); drawTimeline();
+      setStatus(`${c.id} ← ${fmt(t)} · הבאה: ${data.cues[tapIdx] ? data.cues[tapIdx].id : '—'}`);
+    }
+    if (e.key === 'k' || e.key === 'K' || e.key === 'ל') {
+      const c = data.cues[tapIdx - 1]; if (!c) return; c.end = t; choreo.setData(data); save(); buildEditor(); drawTimeline();
+    }
+  });
+
+  // ---------- fit + loop ----------
+  function fit() {
+    const wrap = $('#stageWrap'), w = wrap.clientWidth;
+    $('#stage').style.transform = `scale(${w / 1920})`;
+    wrap.style.height = (1080 * w) / 1920 + 'px';
+    drawTimeline();
+  }
+  window.addEventListener('resize', fit);
+  const scrub = $('#scrub');
+  let scrubbing = false;
+  scrub.addEventListener('input', () => { scrubbing = true; seek((scrub.value / 1000) * DUR()); });
+  scrub.addEventListener('change', () => (scrubbing = false));
+  let lastDraw = 0;
+  function loop(ts) {
+    const t = now();
+    if (!haveAudio && demoClock.playing && t >= DUR()) pause();
+    renderAt(t);
+    if (!scrubbing) scrub.value = Math.round((t / DUR()) * 1000);
+    $('#time').textContent = `${fmt(t)} / ${fmt(DUR())}`;
+    if (ts - lastDraw > 100) {
+      drawTimeline(); lastDraw = ts;
+      const c = choreo.anyActive(t);
+      if (c !== activeRow) {
+        tbody.querySelectorAll('tr.on').forEach((r) => r.classList.remove('on'));
+        if (c) { const r = tbody.querySelector(`tr[data-i="${data.cues.indexOf(c)}"]`); if (r) r.classList.add('on'); }
+        activeRow = c;
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  buildEditor(); setMode(); fit(); requestAnimationFrame(loop);
+})();
