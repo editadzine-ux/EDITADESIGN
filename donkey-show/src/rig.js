@@ -425,7 +425,7 @@
       this.headWorld = (x, y) => { const q = rot(x * hs, y * hs, hr); return [q[0] + nt[0], q[1] + nt[1]]; };
       this.applyFace(p, ear);
       if (this.sprite) {
-        const SK = this.id === 'T' ? { k: 1.06, drop: 12, mdx: 4, mdy: -112 } : { k: 0.95, drop: 12, mdx: -7, mdy: -127 };
+        const SK = this.id === 'T' ? { k: 1.06, drop: 12, mdx: 48, mdy: -90 } : { k: 0.95, drop: 12, mdx: 67, mdy: -76 };
         const name = this.pickExpr(p);
         if (name !== this.sprite.cur) {
           if (this.sprite.cur) this.sprite.imgs[this.sprite.cur].setAttribute('display', 'none');
@@ -436,7 +436,8 @@
         const hrs = (p.headRot + lean * 0.4) * 0.8 + (p.neckRot || 0);
         const sk = SK.k;
         this.sprite.g.setAttribute('transform', `translate(${f1(nb2[0] + p.headDx * 0.6)},${f1(nb2[1] + SK.drop + p.headDy * 0.6)}) rotate(${f1(hrs)}) scale(${sk.toFixed(3)})`);
-        this.headWorld = (x, y) => { const q = rot(SK.mdx * sk, SK.mdy * sk, hrs); return [q[0] + nb2[0], q[1] + nb2[1] + SK.drop]; };
+        const hx0 = nb2[0] + p.headDx * 0.6, hy0 = nb2[1] + SK.drop + p.headDy * 0.6;
+        this.headWorld = (x, y) => { const q = rot(SK.mdx * sk, SK.mdy * sk, hrs); return [q[0] + hx0, q[1] + hy0]; };
         this.spriteMouth = this.headWorld(0, 0);
         // overlays: sweat drops, snore bubble, motion marks
         const sw = p.sweat || 0, ph = (p.t * 0.9) % 1, ph2 = (p.t * 0.9 + 0.5) % 1;
@@ -469,23 +470,29 @@
       }
       // mouth position in body space (used for the mic hand)
       const mouthW = this.sprite ? this.spriteMouth : this.headWorld(h.mx - h.mrx * 0.15, h.my + h.mry * 1.25);
-      // ---- mic arm (front)
-      const chest = [shF[0] + 22, shF[1] + 118];
-      const micAng = (this.sprite ? -18 : -38) + (p.micTilt || 0); // mic points up toward the muzzle
-      const micDir = [Math.cos((micAng - 90) * D2R), Math.sin((micAng - 90) * D2R)];
-      const mOff = this.sprite ? [this.id === 'T' ? 22 : 18, this.id === 'T' ? 60 : 56] : [26, 6];
-      const headTarget = [mouthW[0] + mOff[0] - micDir[0] * 74 + (p.micDx || 0), mouthW[1] + mOff[1] - micDir[1] * 74 + (p.micDy || 0)];
-      const mt = clamp(p.micT, 0, 1);
-      const handM = [chest[0] + (headTarget[0] - chest[0]) * mt, chest[1] + (headTarget[1] - chest[1]) * mt];
-      // mic offered to the audience: arm out, mic pointing forward
-      const mOut = clamp(p.micOut || 0, 0, 1);
-      handM[0] += (shF[0] + 150 - handM[0]) * mOut; handM[1] += (shF[1] - 20 - handM[1]) * mOut;
-      this.poseArm(this.mic, shF, handM, 'fist', (mt > 0.5 ? micAng : micAng + 40 * (1 - mt * 2)) * (1 - mOut) + 72 * mOut, true);
+      // ---- mic arm (front): mic head sits just in front of the open mouth, the mic tilts down-forward toward a
+      // natural grip below the chin, the fist wraps the shaft and the elbow hangs down and forward (V shape)
+      const T_ = this.id === 'T', ms = this.sprite ? 1.3 : 1, reach = 58 * ms;
+      const mt = clamp(p.micT, 0, 1), mOut = clamp(p.micOut || 0, 0, 1);
+      const micHead = [mouthW[0] + (T_ ? 26 : 22) + (p.micDx || 0), mouthW[1] + (T_ ? 30 : 28) + 10 * clamp(p.jaw || 0, 0, 1) + (p.micDy || 0)];
+      const want = [shF[0] + (T_ ? 58 : 44), shF[1] + (T_ ? -4 : -8)];
+      let dx0 = want[0] - micHead[0], dy0 = want[1] - micHead[1], dl = Math.hypot(dx0, dy0) || 1;
+      const gripSing = [micHead[0] + dx0 / dl * reach, micHead[1] + dy0 / dl * reach];
+      const angSing = Math.atan2(-dy0, -dx0) / D2R + 90 + (p.micTilt || 0);   // mic axis points from grip to head
+      const gripRest = [shF[0] + (T_ ? 34 : 30), shF[1] + (T_ ? 118 : 96)], angRest = 12;
+      const gripOut = [shF[0] + 170, shF[1] - 30], angOut = 80;
+      const e = mt * mt * (3 - 2 * mt);
+      let grip = [gripRest[0] + (gripSing[0] - gripRest[0]) * e, gripRest[1] + (gripSing[1] - gripRest[1]) * e];
+      let ang = angRest + (angSing - angRest) * e;
+      grip = [grip[0] + (gripOut[0] - grip[0]) * mOut, grip[1] + (gripOut[1] - grip[1]) * mOut];
+      ang = ang + (angOut - ang) * mOut;
+      this.poseMicArm(shF, grip, ang, ms);
+      this._dbg = { shF, mouthW, grip, shB };
       // ---- free arm
       const fa = [shB[0] + p.armX, shB[1] + p.armY];
       if (p.armFront) { if (this.free.g.parentNode !== this.layers.armFrontFree) this.layers.armFrontFree.appendChild(this.free.g); }
       else if (this.free.g.parentNode !== this.layers.armBack) this.layers.armBack.appendChild(this.free.g);
-      this.poseArm(this.free, shB, fa, p.hand, p.handRot || 0, false, p);
+      this.poseArm(this.free, shB, fa, p.hand, p.handRot || 0);
       // straw
       const strawMouth = p.straw > 0.5;
       this.strawHead.setAttribute('display', strawMouth ? 'inline' : 'none');
@@ -493,26 +500,44 @@
       this.free.straw.setAttribute('display', p.strawHand > 0.5 ? 'inline' : 'none');
     }
 
-    poseArm(A, sh, target, hand, extraRot, isMic, p) {
+    // pick the IK solution whose elbow is nearest a pole point (stable, never folds the wrong way)
+    solveArm(sh, target, pole) {
       const s = this.s;
-      // consistent bend direction (no elbow flips): mic arm bends forward/down, free arm backward/down
-      const sgn = isMic ? 1 : -1, dxT = target[0] - sh[0], dyT = target[1] - sh[1];
-      const cr = (q) => dxT * (q[1] - sh[1]) - dyT * (q[0] - sh[0]);
-      const r = ik(sh[0], sh[1], target[0], target[1], s.upper, s.fore, (a, b) => (cr(a) * sgn >= cr(b) * sgn ? a : b));
+      return ik(sh[0], sh[1], target[0], target[1], s.upper, s.fore, (a, b) => (Math.hypot(a[0] - pole[0], a[1] - pole[1]) <= Math.hypot(b[0] - pole[0], b[1] - pole[1]) ? a : b));
+    }
+
+    poseMicArm(sh, grip, micAng, ms) {
+      const A = this.mic;
+      const pole = [sh[0] + 110, sh[1] + 170];             // elbow down and forward
+      const FC = [-2, 19];                                 // fist centre in hand space
+      let fa = micAng - 90, r = null;
+      for (let it = 0; it < 3; it++) {
+        const q = rot(FC[0], FC[1], fa);
+        r = this.solveArm(sh, [grip[0] - q[0], grip[1] - q[1]], pole);
+        const fore = Math.atan2(r.end[1] - r.j[1], r.end[0] - r.j[0]) / D2R - 90;
+        // the knuckles run along the shaft; choose the side that keeps the wrist least bent
+        const d1 = ((micAng - 90 - fore) % 360 + 540) % 360 - 180, d2 = ((micAng + 90 - fore) % 360 + 540) % 360 - 180;
+        fa = Math.abs(d1) <= Math.abs(d2) ? micAng - 90 : micAng + 90;
+      }
+      A.upper.set(boneT(sh, r.j));
+      A.fore.set(boneT(r.j, r.end));
+      const fore = Math.atan2(r.end[1] - r.j[1], r.end[0] - r.j[0]) / D2R - 90;
+      A.cuff.setAttribute('transform', `translate(${f1(r.end[0])},${f1(r.end[1])}) rotate(${f1(fore)}) translate(0,-8)`);
+      A.hand.setAttribute('transform', `translate(${f1(r.end[0])},${f1(r.end[1])}) rotate(${f1(fa)})`);
+      const q = rot(FC[0], FC[1], fa), g = [r.end[0] + q[0], r.end[1] + q[1]];
+      A.micG.setAttribute('transform', `translate(${f1(g[0])},${f1(g[1])}) rotate(${f1(micAng)}) scale(${ms}) translate(0,24)`);
+      for (const k in A.shapes) A.shapes[k].setAttribute('display', k === 'fist' ? 'inline' : 'none');
+    }
+
+    poseArm(A, sh, target, hand, extraRot) {
+      // free arm: elbow down and back (pole), so raised and lowered arms bend the same, natural way
+      const r = this.solveArm(sh, target, [sh[0] - 90, sh[1] + 140]);
       A.upper.set(boneT(sh, r.j));
       A.fore.set(boneT(r.j, r.end));
       const ang = Math.atan2(r.end[1] - r.j[1], r.end[0] - r.j[0]) / D2R - 90;
       A.cuff.setAttribute('transform', `translate(${f1(r.end[0])},${f1(r.end[1])}) rotate(${f1(ang)}) translate(0,-8)`);
-      if (isMic) {
-        A.hand.setAttribute('transform', `translate(${f1(r.end[0])},${f1(r.end[1])}) rotate(${f1(ang)})`);
-        // mic in world angle, anchored in the fist
-        const fc = [r.end[0] + Math.cos((ang + 90) * D2R) * 18, r.end[1] + Math.sin((ang + 90) * D2R) * 18];
-        A.micG.setAttribute('transform', `translate(${f1(fc[0])},${f1(fc[1])}) rotate(${f1(extraRot)}) translate(0,24)`);
-        for (const k in A.shapes) A.shapes[k].setAttribute('display', k === 'fist' ? 'inline' : 'none');
-      } else {
-        A.hand.setAttribute('transform', `translate(${f1(r.end[0])},${f1(r.end[1])}) rotate(${f1(ang + extraRot)})`);
-        for (const k in A.shapes) A.shapes[k].setAttribute('display', k === hand ? 'inline' : 'none');
-      }
+      A.hand.setAttribute('transform', `translate(${f1(r.end[0])},${f1(r.end[1])}) rotate(${f1(ang + extraRot)})`);
+      for (const k in A.shapes) A.shapes[k].setAttribute('display', k === hand ? 'inline' : 'none');
     }
 
     applyFace(p, ear) {
