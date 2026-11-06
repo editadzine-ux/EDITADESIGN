@@ -15,6 +15,7 @@
   }
   const save = () => { try { localStorage.setItem(STORE, JSON.stringify(data)); } catch (e) { } };
   const choreo = new DS.Choreo(data);
+  DS.choreoRef = choreo;
   const refresh = () => { data.cues.sort((a, b) => a.start - b.start); data.shots.sort((a, b) => a.t - b.t); choreo.setData(data); save(); };
 
   // strip niqqud/cantillation for display (the pointed source text is kept untouched)
@@ -87,6 +88,7 @@
     return { s: sc, cx: m[0], cy: m[1] + lift - (k.startsWith('x') ? 0 : 20) };
   }
   const EASE = { io: (u) => u * u * (3 - 2 * u), out: (u) => 1 - Math.pow(1 - u, 3), in: (u) => u * u * u, lin: (u) => u };
+  const camState = { idx: -1, t: -1, cx: 0, cy: 0 };
   function camera(t) {
     const shots = data.shots;
     let cur = shots[0];
@@ -98,12 +100,24 @@
       f = { s: Math.exp(Math.log(f.s) + (Math.log(g.s) - Math.log(f.s)) * u), cx: f.cx + (g.cx - f.cx) * u, cy: f.cy + (g.cy - f.cy) * u };
     }
     let sc = f.s;
-    if (cur.pulse) sc *= 1 + 0.025 * Math.pow(Math.abs(Math.cos(Math.PI * choreo.beat(t))), 10);
-    return { s: sc, cx: f.cx, cy: f.cy, k: cur.to && t - cur.t < (cur.d || 1) ? 'move' : cur.to || cur.k };
+    if (cur.pulse) sc *= 1 + 0.018 * Math.pow(Math.abs(Math.cos(Math.PI * choreo.beat(t))), 10);
+    // slow push-in during a held shot so the frame breathes (never on moves or the end card)
+    const idx = shots.indexOf(cur), next = shots[idx + 1], dur = (next ? next.t : (data.duration || 166)) - cur.t;
+    if (!cur.to && cur.k !== 'curtain') sc *= 1 + 0.035 * Math.min(1, (t - cur.t) / Math.max(1.5, dur));
+    // tracked framings follow the subject with a little lag (operator feel), reset on every cut or seek
+    let cx = f.cx, cy = f.cy;
+    const tracked = !SHOTS[cur.k] || (cur.to && !SHOTS[cur.to]);
+    if (tracked && camState.idx === idx && t > camState.t && t - camState.t < 0.12) {
+      const al = 1 - Math.exp(-(t - camState.t) / 0.14);
+      cx = camState.cx + (cx - camState.cx) * al; cy = camState.cy + (cy - camState.cy) * al;
+    }
+    camState.idx = idx; camState.t = t; camState.cx = cx; camState.cy = cy;
+    return { s: sc, cx, cy, k: cur.to && t - cur.t < (cur.d || 1) ? 'move' : cur.to || cur.k };
   }
   DS.camera = camera;
 
   function earLag(id, t) {
+    if (DS.SPRITES) return { rot: 0, bend: 0 }; // drawn heads: ears are part of the drawing
     const a = choreo.pose(id, t), b = choreo.pose(id, t - 0.07), c = choreo.pose(id, t - 0.14);
     const hy = (p) => p.y + p.hipDy + p.headDy, hr = (p) => p.headRot + p.lean;
     const dy = (hy(a) - hy(b)) * 0.9 + (hy(b) - hy(c)) * 0.5;

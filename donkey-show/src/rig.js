@@ -495,7 +495,10 @@
 
     poseArm(A, sh, target, hand, extraRot, isMic, p) {
       const s = this.s;
-      const r = ik(sh[0], sh[1], target[0], target[1], s.upper, s.fore, (a, b) => (a[1] > b[1] ? a : b));
+      // consistent bend direction (no elbow flips): mic arm bends forward/down, free arm backward/down
+      const sgn = isMic ? 1 : -1, dxT = target[0] - sh[0], dyT = target[1] - sh[1];
+      const cr = (q) => dxT * (q[1] - sh[1]) - dyT * (q[0] - sh[0]);
+      const r = ik(sh[0], sh[1], target[0], target[1], s.upper, s.fore, (a, b) => (cr(a) * sgn >= cr(b) * sgn ? a : b));
       A.upper.set(boneT(sh, r.j));
       A.fore.set(boneT(r.j, r.end));
       const ang = Math.atan2(r.end[1] - r.j[1], r.end[0] - r.j[0]) / D2R - 90;

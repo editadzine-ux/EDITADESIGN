@@ -129,7 +129,7 @@
 
   class Choreo {
     constructor(data) { this.setData(data); }
-    setData(data) { this.data = data; this.byId = {}; for (const c of data.cues) this.byId[c.id] = c; }
+    setData(data) { this.data = data; this.byId = {}; for (const c of data.cues) this.byId[c.id] = c; this._pc = new Map(); }
     C(id) { return this.byId[id] || { start: 1e9, end: 1e9 }; }
     M(name) { return this.data.markers[name]; }
     beat(t) { return (t - this.data.beat0) * this.data.bpm / 60; }
@@ -173,7 +173,36 @@
       return { jaw, o: oEnd ? 1 : 0, state, held };
     }
 
+    // smoothed pose: a short Gaussian over neighbouring frames for body/limb channels (no pops, natural ease),
+    // with the hands sampled a touch later than the body (follow-through). Face/mouth channels are never blurred.
     pose(id, t) {
+      const OFF = [-0.133, -0.1, -0.067, -0.033, 0, 0.033, 0.067, 0.1, 0.133];
+      const G = (o, sg) => Math.exp(-(o * o) / (2 * sg * sg));
+      const c = this.rawPoseCached(id, t), out = Object.assign({}, c);
+      const BODY = ['x', 'dx', 'y', 'sq', 'hipDx', 'hipDy', 'hipRot', 'lean', 'puff', 'shrug', 'fBx', 'fBy', 'fFx', 'fFy', 'fBa', 'fFa', 'headRot', 'headDx', 'headDy', 'neckRot', 'micT', 'micTilt', 'micOut', 'crouch'];
+      const HAND = ['armX', 'armY', 'handRot'];
+      const acc = {}, wsum = { b: 0, h: 0 };
+      for (const o of OFF) {
+        const q = this.rawPoseCached(id, t + o);
+        const wb = G(o, 0.055), wh = G(o + 0.03, 0.065);
+        wsum.b += wb; wsum.h += wh;
+        for (const k of BODY) acc[k] = (acc[k] || 0) + q[k] * wb;
+        for (const k of HAND) acc[k] = (acc[k] || 0) + q[k] * wh;
+      }
+      for (const k of BODY) out[k] = acc[k] / wsum.b;
+      for (const k of HAND) out[k] = acc[k] / wsum.h;
+      return out;
+    }
+    rawPoseCached(id, t) {
+      const key = id + Math.round(t * 1000);
+      this._pc = this._pc || new Map();
+      let v = this._pc.get(key);
+      if (!v) { v = this.rawPose(id, t); this._pc.set(key, v); if (this._pc.size > 600) this._pc.delete(this._pc.keys().next().value); }
+      return v;
+    }
+    setDataHook() { this._pc = new Map(); }
+
+    rawPose(id, t) {
       const T = id === 'T';
       const C = (k) => this.C(k);
       const p = basePose(id, t);
@@ -509,6 +538,14 @@
       }
 
       // blink (not when eyes are deliberately shut or winking)
+      // life when standing: breathing, a lazy weight shift, a drifting head (additive, tiny)
+      { const ph = T ? 0 : 1.7;
+        p.hipDy += 2.6 * Math.sin(t * 2 * Math.PI / 3.1 + ph);
+        p.puff += 0.035 * Math.sin(t * 2 * Math.PI / 3.1 + ph + 0.6);
+        p.hipDx += 4 * Math.sin(t * 2 * Math.PI / 7.3 + ph * 2);
+        p.headRot += 1.4 * Math.sin(t * 2 * Math.PI / 4.7 + ph) + 0.8 * Math.sin(t * 2 * Math.PI / 2.3 + ph * 3);
+        p.armY += 5 * Math.sin(t * 2 * Math.PI / 3.1 + ph + 0.9);
+        p.armX += 3 * Math.sin(t * 2 * Math.PI / 5.9 + ph); }
       // irregular blinks: 2.4–6 s apart, 0.2 s long (half-lid → shut → half-lid)
       { const seed = T ? 3 : 11; let tt = 1.0 + seed * 0.13, k2 = 0;
         while (tt < t - 0.25 && k2 < 400) { tt += 2.4 + 3.6 * hash(seed * 31 + k2); k2++; }
@@ -543,7 +580,7 @@
       const s1 = this.C('s1a').start;
       star += 18 * Math.sin((t - s1) * 6) * win(t, s1, s1 + 1.6, 0.05, 0.8);
       star += 25 * Math.sin((t - me) * 3) * win(t, me + 0.1, me + 4, 0.2, 1.2);
-      const pT = this.pose('T', t), pS = this.pose('S', t);
+      const pT = this.rawPoseCached('T', t), pS = this.rawPoseCached('S', t);
       return { t, curtain, poolT: pT.x + pT.dx, poolS: pS.x + pS.dx, glow: 0.5 };
     }
 

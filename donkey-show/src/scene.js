@@ -548,6 +548,14 @@
       if (mo) { Fx.mouth.setAttribute('d', MOUTH[mo]); Fx.mouth.setAttribute('fill', mo === 'o' || mo === 'yawn' ? '#8f3a35' : 'none'); }
     };
     const beat = o.beat, pulse = (ph) => Math.pow(Math.abs(Math.cos((beat + ph) * Math.PI)), 6);
+    // everyone breathes a little (sitting figures rise and settle; slow, out of phase)
+    let k2 = 0;
+    for (const name of ['pianist', 'bassist', 'drummer', 'turtle']) {
+      const Fx = F[name], B = Fx.B, m = DS.SPRITES['band_' + name];
+      const br = Math.sin((o.t || 0) * 2 * Math.PI / (3.3 + k2 * 0.4) + k2 * 1.9);
+      Fx.root.setAttribute('transform', `translate(${B.x},${f1(B.bottom - m.h * B.s * (1 + 0.006 * br))}) scale(${B.s},${(B.s * (1 + 0.006 * br)).toFixed(4)})`);
+      k2++;
+    }
     // pianist: hands alternate on the keys, head nods slightly
     headPose(F.pianist, faces.piano || {}, (o.pianoNod || 0) * 2, 1.5 * Math.sin(beat * Math.PI) * play);
     F.pianist.pieces.h1.setAttribute('transform', `translate(0,${f1(-5 * Math.max(0, Math.sin(beat * Math.PI * 2)) * play)})`);
