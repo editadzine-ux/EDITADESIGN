@@ -15,7 +15,7 @@ T = {  # start, end (seconds) from the vocal stem phrase analysis
  's2a':(56.01,58.62),'s2b':(59.11,61.54),'s2c':(62.55,64.03),'s2d':(64.55,66.40),
  'v3a':(66.60,69.70),'v3b':(70.56,74.70),'v3c':(74.75,76.24),'v3d':(76.57,78.40),'v3e':(78.94,85.03),
  'o1':(86.08,89.43),'o2':(90.00,91.34),'o3':(91.85,93.33),'o4':(93.85,95.63),'o5':(96.00,98.23),'o6':(99.65,101.23),'o7':(101.86,103.50)}
-WHO = {'v1a':'both','v1b':'T','v1c':'S','v1d':'T','v1e':'both','v2a':'both','v2b':'both','v2c':'S','v2d':'T','v2e':'both',
+WHO = {'v1a':'both','v1b':'T','v1c':'S','v1d':'T','v1e':'both','v2a':'both','v2b':'both','v2c':'S','v2d':'T','v2e':'T',
        'v3a':'T','v3b':'both','v3c':'S','v3d':'T','v3e':'both',
        's1a':'T','s1b':'S','s1c':'T','s1d':'S','s1e':'T','s2a':'T','s2b':'S','s2c':'T','s2d':'T',
        'o1':'T','o2':'S','o3':'T','o4':'S','o5':'T','o6':'S','o7':'T'}
@@ -28,7 +28,7 @@ for i, (cid, text) in enumerate(zip(ids, lines)):
 b = np.array(json.load(open(beats))['beats'])
 k = np.round((b - b[0]) / np.median(np.diff(b)))
 slope, icpt = np.polyfit(k, b, 1)
-data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd': 158.45, 'duration': 159.6,
+data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd': 158.45, 'duration': 166.0,
   'markers': {'open': 1.5, 'inhale': 8.55, 'instr': [[107.2, 157.6]]}, 'cues': cues,
   'shots': [{'t': 0, 'k': 'curtain'},
             {'t': 1.4, 'k': 'curtain', 'to': 'wide', 'd': 2.6, 'e': 'io'},
@@ -53,9 +53,12 @@ data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd':
             {'t': 43.7, 'k': 'cuBass'},
             {'t': 45.85, 'k': 'faceS'},
             {'t': 47.9, 'k': 'faceT'},
-            {'t': 50.4, 'k': 'two', 'to': 'xwide', 'd': 4.5, 'e': 'io'},
+            {'t': 50.4, 'k': 'two', 'to': 'xwide', 'd': 2.2, 'e': 'io'},
+            {'t': 52.6, 'k': 'faceS'},
+            {'t': 54.15, 'k': 'two'},
             {'t': 55.75, 'k': 'dlg'},
             {'t': 55.98, 'k': 'dlg', 'to': 'xfaceT', 'd': 0.22, 'e': 'out'},
+            {'t': 56.3, 'k': 'audience'},
             {'t': 57.2, 'k': 'dlg'},
             {'t': 59.05, 'k': 'faceS'},
             {'t': 62.5, 'k': 'faceT'},
@@ -67,7 +70,7 @@ data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd':
             {'t': 72.25, 'k': 'faceT'},
             {'t': 72.6, 'k': 'faceS'},
             {'t': 72.95, 'k': 'xwide'},
-            {'t': 74.7, 'k': 'faceS'},
+            {'t': 74.7, 'k': 'two'},
             {'t': 76.5, 'k': 'faceT', 'to': 'two', 'd': 1.6, 'e': 'io'},
             {'t': 78.9, 'k': 'wide', 'pulse': 1},
             {'t': 85.7, 'k': 'dlg'},
@@ -82,9 +85,14 @@ data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd':
             {'t': 101.8, 'k': 'faceT'},
             {'t': 102.6, 'k': 'faceT', 'to': 'two', 'd': 0.4, 'e': 'out'},
             {'t': 103.7, 'k': 'xwide'},
-            {'t': 105.0, 'k': 'band'},
+            {'t': 104.2, 'k': 'two'},
+            {'t': 104.95, 'k': 'audience'},
+            {'t': 105.85, 'k': 'faceT'},
+            {'t': 106.45, 'k': 'band'},
             {'t': 107.0, 'k': 'wide', 'pulse': 1},
             {'t': 111.3, 'k': 'two', 'pulse': 1},
+            {'t': 112.2, 'k': 'dlg'},
+            {'t': 113.7, 'k': 'two'},
             {'t': 115.5, 'k': 'feet'},
             {'t': 117.6, 'k': 'two'},
             {'t': 119.8, 'k': 'feet'},
@@ -98,9 +106,14 @@ data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd':
             {'t': 143.3, 'k': 'guitFace'},
             {'t': 145.4, 'k': 'fret'},
             {'t': 147.0, 'k': 'xwide'},
-            {'t': 149.7, 'k': 'guit'},
-            {'t': 151.5, 'k': 'wide'},
-            {'t': 158.6, 'k': 'turtle'}]}
+            {'t': 148.4, 'k': 'wide'},
+            {'t': 149.35, 'k': 'rip'},
+            {'t': 150.0, 'k': 'guitFace'},
+            {'t': 150.55, 'k': 'turtle'},
+            {'t': 151.2, 'k': 'wide'},
+            {'t': 158.6, 'k': 'turtle'},
+            {'t': 159.35, 'k': 'wide'},
+            {'t': 161.3, 'k': 'wide', 'to': 'curtain', 'd': 3.5, 'e': 'io'}]}
 # vocal envelope at 60 fps (drives jaw openness)
 y, sr = librosa.load(voc, sr=16000, mono=True)
 hop = sr // 60

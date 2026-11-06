@@ -4,7 +4,7 @@
   const DS = window.DS;
   const params = new URLSearchParams(location.search);
   const RENDER = params.has('render');
-  const STORE = 'donkey-show-timing-v4';
+  const STORE = 'donkey-show-timing-v5';
   const $ = (s) => document.querySelector(s);
 
   // ---------- data ----------
@@ -42,6 +42,7 @@
   const S = new DS.Donkey('S', stage.actors);
   const sub = $('#sub');
   const badge = $('#badge');
+  const credit = $('#credit');
 
   // ---------- camera: static framings, framings that track faces/hands, and animated moves ----------
   const SHOTS = {
@@ -57,8 +58,9 @@
     feet: { s: 1.6, cx: 965, cy: 770 },
     turtle: { s: 2.7, cx: 1772, cy: 700 },
     band: { s: 1.5, cx: 1500, cy: 700 },
+    audience: { s: 1.0, cx: 960, cy: 2940 },
   };
-  const D = { faceT: 2.2, faceS: 2.4, xfaceT: 3.3, xfaceS: 3.5, guitFace: 3.0, fret: 3.0, guit: 1.9 };
+  const D = { rip: 2.5, faceT: 2.2, faceS: 2.4, xfaceT: 3.3, xfaceS: 3.5, guitFace: 3.0, fret: 3.0, guit: 1.9 };
   let marks = {};
   const ctmPoint = (node, x, y) => { const m = node.getCTM(); return [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]; };
   function measure(pT, pS) {
@@ -72,6 +74,7 @@
     marks.guitFace = ctmPoint(g.headWrap, 0, -10);
     marks.fret = ctmPoint(g.armF.end, 0, 0);
     marks.guit = ctmPoint(g.torso, 0, -150);
+    marks.rip = ctmPoint(S.tg, -50, -40);
   }
   function framing(k) {
     if (SHOTS[k]) return SHOTS[k];
@@ -125,6 +128,9 @@
     if (!c) for (const q of data.cues) if (t > q.end && t < q.end + 0.35) c = q;
     const txt = c ? plain(c.text) : '';
     if (txt !== lastSub) { sub.textContent = txt; sub.style.opacity = txt ? 1 : 0; lastSub = txt; }
+    const ct = data.musicEnd + 3.15, co = Math.max(0, Math.min(1, (t - ct) / 0.8));
+    credit.style.opacity = co.toFixed(3);
+    credit.style.transform = `translate(-50%, -50%) scale(${(0.96 + 0.04 * co).toFixed(3)})`;
   }
   DS.renderAt = renderAt;
   // QA: where are the ears / whole characters on screen right now?
@@ -152,9 +158,11 @@
   // ---------- audio clock ----------
   const audio = $('#audio');
   let haveAudio = false, demoClock = { playing: false, base: 0, t0: 0 };
-  const DUR = () => (haveAudio && isFinite(audio.duration) ? audio.duration : data.duration || 90);
-  const now = () => (haveAudio ? audio.currentTime : demoClock.playing ? demoClock.base + (performance.now() - demoClock.t0) / 1000 : demoClock.base);
-  const playing = () => (haveAudio ? !audio.paused : demoClock.playing);
+  const DUR = () => Math.max(haveAudio && isFinite(audio.duration) ? audio.duration : 0, data.duration || 90);
+  const tail = { on: false, t0: 0 };
+  const now = () => (haveAudio ? (tail.on ? Math.min(DUR(), audio.duration + (performance.now() - tail.t0) / 1000) : audio.currentTime) : demoClock.playing ? demoClock.base + (performance.now() - demoClock.t0) / 1000 : demoClock.base);
+  const playing = () => (haveAudio ? !audio.paused || tail.on : demoClock.playing);
+  audio.addEventListener('ended', () => { tail.on = true; tail.t0 = performance.now(); });
 
   function setStatus(msg) { $('#status').textContent = msg; }
   function setMode() {
@@ -191,12 +199,14 @@
     else { demoClock.t0 = performance.now(); demoClock.playing = true; }
   }
   function pause() {
+    if (tail.on) { tail.on = false; return; }
     if (haveAudio) audio.pause();
     else { demoClock.base = now(); demoClock.playing = false; }
   }
   function seek(t) {
     t = Math.max(0, Math.min(DUR(), t));
-    if (haveAudio) audio.currentTime = t; else { demoClock.base = t; demoClock.t0 = performance.now(); }
+    tail.on = false;
+    if (haveAudio) audio.currentTime = Math.min(t, audio.duration || t); else { demoClock.base = t; demoClock.t0 = performance.now(); }
   }
   $('#play').onclick = play;
   $('#pause').onclick = pause;

@@ -4,7 +4,7 @@ DS.DEFAULT_DATA = {
  "bpm": 112.369,
  "beat0": 0.207,
  "musicEnd": 158.45,
- "duration": 159.6,
+ "duration": 166.0,
  "markers": {
   "open": 1.5,
   "inhale": 8.55,
@@ -144,7 +144,7 @@ DS.DEFAULT_DATA = {
   },
   {
    "id": "v2e",
-   "who": "both",
+   "who": "T",
    "kind": "sing",
    "start": 50.58,
    "end": 55.65,
@@ -422,8 +422,16 @@ DS.DEFAULT_DATA = {
    "t": 50.4,
    "k": "two",
    "to": "xwide",
-   "d": 4.5,
+   "d": 2.2,
    "e": "io"
+  },
+  {
+   "t": 52.6,
+   "k": "faceS"
+  },
+  {
+   "t": 54.15,
+   "k": "two"
   },
   {
    "t": 55.75,
@@ -435,6 +443,10 @@ DS.DEFAULT_DATA = {
    "to": "xfaceT",
    "d": 0.22,
    "e": "out"
+  },
+  {
+   "t": 56.3,
+   "k": "audience"
   },
   {
    "t": 57.2,
@@ -483,7 +495,7 @@ DS.DEFAULT_DATA = {
   },
   {
    "t": 74.7,
-   "k": "faceS"
+   "k": "two"
   },
   {
    "t": 76.5,
@@ -555,7 +567,19 @@ DS.DEFAULT_DATA = {
    "k": "xwide"
   },
   {
-   "t": 105.0,
+   "t": 104.2,
+   "k": "two"
+  },
+  {
+   "t": 104.95,
+   "k": "audience"
+  },
+  {
+   "t": 105.85,
+   "k": "faceT"
+  },
+  {
+   "t": 106.45,
    "k": "band"
   },
   {
@@ -567,6 +591,14 @@ DS.DEFAULT_DATA = {
    "t": 111.3,
    "k": "two",
    "pulse": 1
+  },
+  {
+   "t": 112.2,
+   "k": "dlg"
+  },
+  {
+   "t": 113.7,
+   "k": "two"
   },
   {
    "t": 115.5,
@@ -626,16 +658,39 @@ DS.DEFAULT_DATA = {
    "k": "xwide"
   },
   {
-   "t": 149.7,
-   "k": "guit"
+   "t": 148.4,
+   "k": "wide"
   },
   {
-   "t": 151.5,
+   "t": 149.35,
+   "k": "rip"
+  },
+  {
+   "t": 150.0,
+   "k": "guitFace"
+  },
+  {
+   "t": 150.55,
+   "k": "turtle"
+  },
+  {
+   "t": 151.2,
    "k": "wide"
   },
   {
    "t": 158.6,
    "k": "turtle"
+  },
+  {
+   "t": 159.35,
+   "k": "wide"
+  },
+  {
+   "t": 161.3,
+   "k": "wide",
+   "to": "curtain",
+   "d": 3.5,
+   "e": "io"
   }
  ]
 };

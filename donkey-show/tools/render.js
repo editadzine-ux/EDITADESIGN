@@ -51,7 +51,7 @@ const url = 'file://' + path.join(root, 'index.html') + '?render=1' + (flag('moc
     return;
   }
 
-  const fps = +opt('fps', 30), from = +opt('from', 0), to = +opt('to', 159.6);
+  const fps = +opt('fps', 30), from = +opt('from', 0), to = +opt('to', 166);
   const out = path.resolve(opt('out', path.join(root, 'out', 'clip.mp4')));
   const audio = opt('audio', path.join(root, 'audio', 'song.mp3'));
   fs.mkdirSync(path.dirname(out), { recursive: true });
@@ -61,7 +61,7 @@ const url = 'file://' + path.join(root, 'index.html') + '?render=1' + (flag('moc
     ...(audio && !flag('noaudio') ? ['-ss', String(from), '-t', String(to - from), '-i', audio] : []),
     '-map', '0:v', ...(audio && !flag('noaudio') ? ['-map', '1:a', '-c:a', 'aac', '-b:a', '192k'] : []),
     '-c:v', 'libx264', '-preset', opt('preset', 'medium'), '-crf', opt('crf', '18'), '-pix_fmt', 'yuv420p', '-r', String(fps),
-    '-movflags', '+faststart', '-shortest', out], { stdio: ['pipe', 'inherit', 'inherit'] });
+    '-af', 'apad', '-t', String(to - from), '-movflags', '+faststart', out], { stdio: ['pipe', 'inherit', 'inherit'] });
   const t0 = Date.now();
   for (let i = 0; i < n; i++) {
     const t = from + i / fps;

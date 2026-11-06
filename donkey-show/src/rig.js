@@ -174,6 +174,10 @@
       // button
       for (let i = 0; i < (s.buttons || 1); i++) el('circle', { cx: -wh * 0.62 - b * 0.4, cy: -H * (0.42 - i * 0.2), r: 8, fill: s.buckle, stroke: INK, 'stroke-width': 3 }, g);
       this.torsoPts = { shoulderB: [-sh + 6, -H + 14], shoulderF: [sh - 6, -H + 14], neck: [6, -H + 4] };
+      // pants rip on the seat (hidden until the bow)
+      this.rip = el('g', { display: 'none' }, g);
+      el('path', { d: `M${-wh * 0.98},-14 L${-wh * 0.86},-22 L${-wh * 0.74},-12 L${-wh * 0.62},-24 L${-wh * 0.52},-10 L${-wh * 0.56},${hem + 8} L${-wh * 0.72},${hem + 16} L${-wh * 0.9},${hem + 10} Z`, fill: '#fffaf0', stroke: INK, 'stroke-width': 3.5, 'stroke-linejoin': 'round' }, this.rip);
+      for (const [x, y] of [[-0.86, -4], [-0.7, 4], [-0.78, 18], [-0.62, 14], [-0.88, 26]]) el('circle', { cx: wh * x, cy: y, r: 4, fill: '#d8323a' }, this.rip);
       // empty pockets turned inside out (hidden until needed)
       this.pockets = [-1, 1].map((k) => {
         const pg = el('g', { display: 'none' }, g);
@@ -269,6 +273,8 @@
       this.sweat = el('path', { d: drop, fill: '#a9d8ef', stroke: INK, 'stroke-width': 3.5, display: 'none' }, hg);
       this.sweat2 = el('path', { d: drop, fill: '#a9d8ef', stroke: INK, 'stroke-width': 3.5, display: 'none' }, hg);
       this.tear = el('path', { d: drop, fill: '#a9d8ef', stroke: INK, 'stroke-width': 3, display: 'none' }, hg);
+      // snore bubble from the nostril
+      this.bubble = el('circle', { cx: h.mx + h.mrx * 0.62, cy: h.my - h.mry * 0.2, r: 10, fill: 'rgba(235,245,255,0.55)', stroke: INK, 'stroke-width': 3, display: 'none' }, hg);
       // motion marks (like the little curved strokes in the reference art), in body space
       this.marks = el('g', { fill: 'none', stroke: INK, 'stroke-width': 4, 'stroke-linecap': 'round' }, this.body);
       // a moth that flies out of an empty pocket
@@ -329,7 +335,8 @@
       for (let i = 0; i < 2; i++) {
         const hj = tiltRot(i ? s.hipHalf : -s.hipHalf, 0);
         const hip = [pv[0] + hj[0], pv[1] + hj[1]];
-        const r = ik(hip[0], hip[1], feet[i][0], feet[i][1], s.thigh, s.shin, (a, b) => (a[0] > b[0] ? a : b));
+        const flip = i ? p.kneeFlipF : p.kneeFlipB;
+        const r = ik(hip[0], hip[1], feet[i][0], feet[i][1], s.thigh, s.shin, (a, b) => ((a[0] > b[0]) !== !!(flip > 0.5) ? a : b));
         const L = this.legs[i];
         L.thigh.set(boneT(hip, r.j));
         L.shin.set(boneT(r.j, r.end));
@@ -343,6 +350,7 @@
       this.tg.setAttribute('transform', `translate(${f1(pv[0])},${f1(pv[1])}) rotate(${f1(lean)}) scale(${puffX.toFixed(3)},${puffY.toFixed(3)})`);
       const toWorld = (x, y) => { const q = rot(x * puffX, y * puffY, lean); return [q[0] + pv[0], q[1] + pv[1]]; };
       const shB = toWorld(...this.torsoPts.shoulderB), shF = toWorld(...this.torsoPts.shoulderF);
+      this.rip.setAttribute('display', (p.rip || 0) > 0.5 ? 'inline' : 'none');
       const pk = p.pockets || 0;
       this.pockets.forEach((P) => {
         P.pg.setAttribute('display', pk > 0.05 ? 'inline' : 'none');
@@ -391,7 +399,10 @@
       const headTarget = [mouthW[0] + 26 - micDir[0] * 74 + (p.micDx || 0), mouthW[1] + 6 - micDir[1] * 74 + (p.micDy || 0)];
       const mt = clamp(p.micT, 0, 1);
       const handM = [chest[0] + (headTarget[0] - chest[0]) * mt, chest[1] + (headTarget[1] - chest[1]) * mt];
-      this.poseArm(this.mic, shF, handM, 'fist', mt > 0.5 ? micAng : micAng + 40 * (1 - mt * 2), true);
+      // mic offered to the audience: arm out, mic pointing forward
+      const mOut = clamp(p.micOut || 0, 0, 1);
+      handM[0] += (shF[0] + 150 - handM[0]) * mOut; handM[1] += (shF[1] - 20 - handM[1]) * mOut;
+      this.poseArm(this.mic, shF, handM, 'fist', (mt > 0.5 ? micAng : micAng + 40 * (1 - mt * 2)) * (1 - mOut) + 72 * mOut, true);
       // ---- free arm
       const fa = [shB[0] + p.armX, shB[1] + p.armY];
       if (p.armFront) { if (this.free.g.parentNode !== this.layers.armFrontFree) this.layers.armFrontFree.appendChild(this.free.g); }
@@ -496,6 +507,10 @@
         const bt = (p.browTilt || 0) * (k ? 1 : -1) * 14;
         E.brow.setAttribute('transform', `translate(0,${f1(by)}) rotate(${f1(bt)})`);
       });
+      const bub = p.bubble || 0;
+      this.bubble.setAttribute('display', bub > 0.05 ? 'inline' : 'none');
+      this.bubble.setAttribute('r', f1(6 + 30 * bub));
+      this.bubble.setAttribute('cx', f1(h.mx + h.mrx * 0.62 + 10 + 22 * bub));
       // blush, tongue, sweat, tear
       this.blush.setAttribute('opacity', clamp(p.blush || 0, 0, 1).toFixed(2));
       const to = clamp(p.tongueOut || 0, 0, 1);

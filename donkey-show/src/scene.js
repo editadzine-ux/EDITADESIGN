@@ -256,6 +256,16 @@
       const lines = el('path', { d: 'M170,-300 L196,-316 M178,-284 L204,-290', stroke: '#fff6e0', 'stroke-width': 3.5, 'stroke-linecap': 'round', display: 'none' }, torso);
       M.guitar = { r, body, torso, headWrap, head, legs, armB, armF, guitar, lines };
     }
+    // ---- curtain cord with a tassel (the turtle's last word)
+    {
+      const cord = el('g', {}, g);
+      el('path', { d: 'M1840,-200 L1840,690', stroke: INK, 'stroke-width': 9 }, cord);
+      el('path', { d: 'M1840,-200 L1840,690', stroke: C.gold, 'stroke-width': 5 }, cord);
+      const tassel = el('g', {}, cord);
+      el('path', { d: 'M1840,690 C1826,700 1824,740 1830,760 L1850,760 C1856,740 1854,700 1840,690 Z', fill: C.gold, stroke: INK, 'stroke-width': 3 }, tassel);
+      el('path', { d: 'M1832,760 L1830,782 M1840,760 L1840,786 M1848,760 L1850,782', stroke: C.goldDark, 'stroke-width': 3 }, tassel);
+      M.cord = { cord, tassel };
+    }
     // ---- turtle stage manager with headset, glasses and a clock sign
     {
       const r = el('g', { transform: `translate(1770,${Y})` }, g);
@@ -292,7 +302,9 @@
       const hourH = el('path', { d: 'M0,0 L0,-15', stroke: INK, 'stroke-width': 4, 'stroke-linecap': 'round' }, el('g', { transform: 'translate(-4,0)' }, sign));
       const minH = el('path', { d: 'M0,0 L0,-24', stroke: INK, 'stroke-width': 3, 'stroke-linecap': 'round' }, el('g', { transform: 'translate(-4,0)' }, sign));
       el('path', { d: 'M-48,-12 C-60,-12 -60,12 -48,12 Z M40,-12 C52,-12 52,12 40,12 Z', fill: '#f1c453', stroke: INK, 'stroke-width': 3 }, sign);
-      M.turtle = { r, headG, head, eyes: tEyes, mouth: tMouth, sign, hourH, minH, legs };
+      const tArm = limb(r, 22, -172, 44, 40, 13, '#f1c453');
+      tArm.g.setAttribute('display', 'none');
+      M.turtle = { r, headG, head, eyes: tEyes, mouth: tMouth, sign, hourH, minH, legs, tArm };
     }
     return M;
   }
@@ -351,21 +363,26 @@
     const aF = ikLimb(-28, -236, fp[0], fp[1], 60, 58, 1);
     setLimb(G.armF, aF[0], aF[1]);
     // picking hand: steady strum → tremolo in the solo → windmill circles
-    const pickFreq = solo ? 8 : 2;
-    const pk = Math.sin(o.beat * Math.PI * pickFreq) * (play ? 1 : 0);
+    const pickFreq = solo ? 8 : 2, stop = o.gStop || 0;
+    const pk = Math.sin(o.beat * Math.PI * pickFreq) * (play ? 1 : 0) * (1 - stop);
     let sp = toTorso(2, -10 + pk * (solo ? 7 : 12));
     if (wind > 0.01) { const th = gt * Math.PI * 2; const wc = [28 + Math.cos(th) * 95, -240 + Math.sin(th) * 95]; sp = [sp[0] + (wc[0] - sp[0]) * wind, sp[1] + (wc[1] - sp[1]) * wind]; }
     const aB = ikLimb(28, -240, sp[0], sp[1], 54, 52, -1);
     setLimb(G.armB, aB[0], aB[1]);
     // head: bangs on the beat, thrown back on bends, pompadour leads
-    const hr = 4 * sinb(1) * play * (1 - solo) + bang * 16 * (nod - 0.5) - bend * 24 - raise * 12 + kneel * -10;
+    const hr = (4 * sinb(1) * play * (1 - solo) + bang * 16 * (nod - 0.5) - bend * 24 - raise * 12 + kneel * -10) * (1 - stop) - stop * 10;
     G.headWrap.setAttribute('transform', `translate(0,${f1(-298 + bang * 6 * nod)}) rotate(${f1(hr)})`);
     G.lines.setAttribute('display', solo > 0.5 && (bend > 0.5 || raise > 0.5 || Math.sin(o.beat * Math.PI * 2) > 0.6) ? 'inline' : 'none');
-    G.face = { squeeze: solo > 0.4 && bend < 0.5 ? 1 : 0, mouth: bend > 0.5 ? 'o' : solo > 0.4 ? 'grit' : 'flat', lid: bend > 0.5 ? 0.25 : 0.45 };
+    G.face = stop > 0.5 ? { squeeze: 0, mouth: 'o', lid: 0.1, lookX: -1, noBlink: 1 } : { squeeze: solo > 0.4 && bend < 0.5 ? 1 : 0, mouth: bend > 0.5 ? 'o' : solo > 0.4 ? 'grit' : 'flat', lid: bend > 0.5 ? 0.25 : 0.45 };
     if (M.soloSpot) { M.soloSpot.setAttribute('opacity', (solo * 0.9).toFixed(2)); M.soloSpot.setAttribute('cx', f1(1535 + slide)); }
     // turtle: holds the clock sign; can raise it, look at it, sigh
     const T = M.turtle, tRaise = o.tRaise || 0, look = o.tLook || 0;
-    T.sign.setAttribute('transform', `translate(${f1(-8 - tRaise * 10)},${f1(-118 - tRaise * 90)})`);
+    const go = o.tGo || 0, pull = o.tPull || 0, ga = o.t * 9;
+    T.sign.setAttribute('transform', `translate(${f1(-8 - tRaise * 10 + go * 26 * Math.cos(ga))},${f1(-118 - tRaise * 90 + go * 26 * Math.sin(ga) + pull * 70)})`);
+    T.tArm.g.setAttribute('display', pull > 0.02 ? 'inline' : 'none');
+    const ry = -150 + 60 * Math.max(0, Math.min(1, (pull - 0.3) / 0.5));
+    if (pull > 0.02) { const k2 = Math.min(1, pull * 2); const aa = ikLimb(22, -172, 22 + 46 * k2, -172 + (ry + 172) * k2, 44, 40, -1); setLimb(T.tArm, aa[0], aa[1]); }
+    if (M.cord) M.cord.tassel.setAttribute('transform', `translate(0,${f1(Math.max(0, ry + 150))})`);
     T.headG.setAttribute('transform', `translate(-6,${f1(-200 + (o.tSigh || 0) * 10)}) rotate(${f1(look * 16 - (o.tSigh || 0) * 6)} 0 20)`);
     const minA = (o.clock || 0) * 360, hourA = 60 + (o.clock || 0) * 30;
     T.minH.setAttribute('transform', `rotate(${f1(minA)})`);
@@ -427,6 +444,32 @@
     S.bg.pools.forEach((p) => p.setAttribute('opacity', (0.55 + 0.45 * (st.glow || 0)).toFixed(2)));
   }
 
+  // dark auditorium seen from the stage: rows of empty seats, one red seat marked 'reserved'
+  function buildAudience(world, defs) {
+    const g = el('g', { class: 'audience', transform: 'translate(0,2400)' }, world);
+    el('rect', { x: -900, y: -500, width: 3720, height: 2100, fill: '#05081b' }, g);
+    const sg = el('radialGradient', { id: 'seatSpot' }, defs);
+    el('stop', { offset: '0%', 'stop-color': '#ffd27a', 'stop-opacity': 0.35 }, sg);
+    el('stop', { offset: '100%', 'stop-color': '#ffd27a', 'stop-opacity': 0 }, sg);
+    el('ellipse', { cx: 960, cy: 560, rx: 330, ry: 260, fill: 'url(#seatSpot)' }, g);
+    for (let r = 0; r < 4; r++) {
+      const w = 150 + r * 40, h = 150 + r * 50, y = 260 + r * 210, n = Math.ceil(2400 / w) + 2;
+      for (let i = -Math.floor(n / 2); i <= Math.floor(n / 2); i++) {
+        const x = 960 + i * (w + 14) + (r % 2 ? 0 : w / 2 + 7);
+        const red = r === 1 && i === 0;
+        el('path', { d: `M${x - w / 2},${y + h} L${x - w / 2},${y + 30} C${x - w / 2},${y} ${x + w / 2},${y} ${x + w / 2},${y + 30} L${x + w / 2},${y + h} Z`,
+          fill: red ? '#c4122f' : '#171127', stroke: red ? INK : '#2a2142', 'stroke-width': red ? 4.5 : 3 }, g);
+        if (red) {
+          el('path', { d: `M${x - 40},${y + 56} L${x + 40},${y + 56} L${x + 40},${y + 104} L${x - 40},${y + 104} Z`, fill: '#fffaf0', stroke: INK, 'stroke-width': 3 }, g);
+          el('path', { d: `M${x - 22},${y + 56} L${x},${y + 36} L${x + 22},${y + 56}`, fill: 'none', stroke: INK, 'stroke-width': 2.5 }, g);
+          const tx = el('text', { x, y: y + 90, 'text-anchor': 'middle', 'font-family': 'Rubik, sans-serif', 'font-weight': 700, 'font-size': 28, fill: INK, direction: 'rtl' }, g);
+          tx.textContent = 'שמור';
+        }
+      }
+    }
+    return g;
+  }
+
   DS.buildStage = function (svg) {
     const defs = el('defs', {}, svg);
     const world = el('g', { id: 'world' }, svg);
@@ -436,6 +479,7 @@
     orch.soloSpot = bg.soloSpot;
     const actors = el('g', { id: 'actors' }, world);
     const curtains = buildCurtains(world);
+    buildAudience(world, defs);
     return { world, bg, lights, orch, actors, curtains };
   };
   DS.poseOrchestra = poseBand;
