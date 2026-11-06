@@ -25,7 +25,7 @@
   function basePose(id, t) {
     const T = id === 'T';
     return {
-      t, x: T ? 640 : 1290, dx: 0, ground: 968, y: 0, face: T ? 1 : -1, sq: 1,
+      t, x: T ? 680 : 1265, dx: 0, ground: 968, y: 0, face: T ? 1 : -1, sq: 1,
       hipDx: 0, hipDy: 6, hipRot: 0, lean: 0, puff: 0, shrug: 0,
       fBx: 0, fBy: 0, fFx: 0, fFy: 0, fBa: 0, fFa: 0,
       headRot: 0, headDx: 0, headDy: 0, neckRot: 0,
@@ -102,6 +102,7 @@
     tAtBeat(b) { return this.data.beat0 + (b * 60) / this.data.bpm; }
     encT() { const m = this.data.markers; return m.instr ? m.instr[0][0] : 1e9; }
     E(n) { return this.tAtBeat(Math.round(this.beat(this.encT())) + n); }
+    fixes() { const C = (k) => this.C(k); return [C('v1b').start + 1.2, C('v2b').start + 1.0, this.E(4), this.E(36)]; }
     active(who, t, pad = 0) {
       for (const c of this.data.cues) if ((c.who === who || c.who === 'both') && t >= c.start - pad && t <= c.end + pad) return c;
       return null;
@@ -130,7 +131,9 @@
       const C = (k) => this.C(k);
       const p = basePose(id, t);
       const k = T ? 1 : 0.63;            // leg-length scale for steps
-      const lag = T ? 0 : 0.25;          // the short one is a quarter beat late
+      // the short one is a quarter beat late… notices, hops back in sync, smiles as if it was planned, drifts late again
+      let lag = T ? 0 : 0.25;
+      if (!T) for (const fx of this.fixes()) lag *= 1 - win(t, fx + 0.25, fx + 2.6, 0.12, 0.6);
       const bt = this.beat(t);
       const b = bt - lag;
       const v1 = C('v1a').start;
@@ -172,6 +175,11 @@
       if (t > v1 + 0.6) mix(p, { micT: act ? 1 : 0.62 }, 1);
       if (t > v1 + 0.6 && act) mix(p, { micT: 0.62 }, 1 - win(t, act.start - 0.3, act.end + 0.3, 0.2, 0.3));
 
+      if (!T) for (const fx of this.fixes()) {
+        mix(p, { lookX: 1, eyeOpen: 1.1, brow: 0.6 }, win(t, fx - 0.5, fx + 0.05, 0.08, 0.05));
+        mix(p, jump(t, fx + 0.05, 0.22, 22, 0.6), win(t, fx - 0.2, fx + 0.5, 0.01, 0.01));
+        mix(p, { lookX: -1, smile: 1, grin: 1, eyeOpen: 0.6, lidTilt: -0.2 }, win(t, fx + 0.35, fx + 1.6, 0.1, 0.25));
+      }
       // =============== VERSE 1: selling air ===============
       {
         const a = C('v1a'), bq = C('v1b');
@@ -208,13 +216,12 @@
       {
         const a = C('s1a'), bq = C('s1b'), c = C('s1c'), d = C('s1d'), e5 = C('s1e');
         if (T) {
-          mix(p, Object.assign(jump(t, a.start + 0.05, 0.55, 70), { armX: -110, armY: -175 }), 1);
+          mix(p, Object.assign(jump(t, a.start + 0.05, 0.55, 45), { armX: -110, armY: -175 }), 1);
           mix(p, { armX: -110, armY: -175, hand: 'open', eyeOpen: 1.35, bulge: 1.2, pupil: 1.5, grin: 1, smile: 1, brow: 1, earDroop: -0.6 }, win(t, a.start - 0.1, a.end + 0.4, 0.1, 0.3));
           // freezes in jazz hands; the grin curdles; sweat
           mix(p, { armX: -110, armY: -170, eyeOpen: 1.15, grin: 1, smile: 0.5, lookX: 1, pupil: 0.6 }, win(t, bq.start, bq.end + 0.25, 0.08, 0.2));
           mix(p, { sweat: 1 }, win(t, bq.start + 0.3, c.end, 0.01, 0.01));
-          // follows the moth with his eyes
-          mix(p, { lookY: -1, lookX: 1, pupil: 0.6, eyeOpen: 1.2 }, win(t, bq.end + 0.3, bq.end + 1.3, 0.1, 0.1));
+
           // "no, but there's an interview" — forced cheerful shrug
           mix(p, { armX: -150, armY: 10, hand: 'open', handRot: -60, smile: 0.85, brow: 1, browTilt: -0.7, eyeOpen: 1.05, shrug: -18 }, win(t, c.start - 0.1, c.end + 0.1, 0.15, 0.2));
           // the money question: pupils shrink
@@ -225,10 +232,6 @@
         } else {
           mix(p, { lookX: 0.9, eyeOpen: 0.85, brow: 0.5, lookY: -0.6 }, win(t, a.start, a.end + 0.2));
           mix(p, { fBy: 0, fFy: 0, fBx: 0, fFx: 0, hipDx: 0, hipRot: 0, hipDy: 6, lean: 0, eyeOpen: 0.5, smile: 0, frown: 0.3, lookX: 0.8, browR: 0.6 }, win(t, bq.start - 0.15, d.end + 0.2, 0.1, 0.2));
-          // turns out his empty pockets… a moth flies out
-          mix(p, { pockets: 1, armX: -14, armY: 120, hand: 'fist' }, win(t, bq.start + 0.1, c.end, 0.12, 0.15));
-          p.moth = clamp((t - (bq.end + 0.05)) / 1.5, 0, 1) * (t < bq.end + 1.55 ? 1 : 0);
-          mix(p, { lookY: -1, lookX: 0.2, eyeOpen: 0.7, headRot: -10 }, win(t, bq.end + 0.15, bq.end + 1.3, 0.1, 0.1));
           // slow unimpressed blink at "interview"; ears droop
           mix(p, { lookX: 1, eyeOpen: 0.4, earDroop: 0.6 }, win(t, c.start, c.end));
           if (t > c.start + 0.5 && t < c.start + 0.9) p.eyeOpen = 0.02;
@@ -246,7 +249,7 @@
         const late = T ? 0 : 0.4;
         mix(p, { armFront: 1, armX: T ? 92 : 80, armY: T ? 70 : 60, hand: 'open', handRot: 80, eyeHappy: 1, headRot: -12, smile: 0.6, puff: 0.4, brow: 0.8, browTilt: -0.8, tear: T ? 1 : 0 }, win(t, b2.start + late, c2.start, 0.3, 0.25));
         if (!T) mix(p, { straw: 1 }, win(t, a.start - 0.6, C('s2a').start + (C('s2a').end - C('s2a').start) * 0.55, 0.01, 0.01));
-        if (!T) mix(p, { browR: 1, lookX: 0.9, eyeOpen: 0.6, pockets: 1 }, win(t, c2.start, c2.end + 0.3, 0.1, 0.15));
+        if (!T) mix(p, { browR: 1, lookX: 0.9, eyeOpen: 0.6 }, win(t, c2.start, c2.end + 0.3, 0.1, 0.15));
         // "it went on the video" — dramatic flick away
         if (T) mix(p, { armX: -190, armY: -60, hand: 'open', handRot: -100, headRot: -14, lookX: -1, eyeOpen: 0.6, browTilt: -0.8, arcE: 1 }, win(t, d2.start, d2.end + 0.2, 0.12, 0.25));
         // long note: the tall one drops to one knee; the short one looks at him, then at us
@@ -309,8 +312,7 @@
         // ta-da, as if it was planned
         mix(p, { armX: -140, armY: -175, hand: 'open', grin: 1, smile: 1, eyeOpen: 1.1, lookX: -1, brow: 1, sq: 1.03 }, win(t, back, back + 0.9, 0.08, 0.3));
         if (!T) {
-          mix(p, { browR: 1, lookX: 0.9, eyeOpen: 0.55, pockets: 1 }, win(t, c3.start, c3.end + 0.5, 0.1, 0.15));
-          if (t > c3.end - 0.3 && t < c3.end + 0.8) p.moth = clamp((t - (c3.end - 0.3)) / 1.1, 0, 1);
+          mix(p, { browR: 1, lookX: 0.9, eyeOpen: 0.55 }, win(t, c3.start, c3.end + 0.5, 0.1, 0.15));
         }
         // "look at the presentations" — callback: presents the air again, wink
         if (T) {
@@ -326,7 +328,7 @@
         if (T) {
           // jump with a heel click
           const j0 = o1.start + 0.1, jd = 0.6;
-          const J = jump(t, j0, jd, 72);
+          const J = jump(t, j0, jd, 48);
           mix(p, J, 1);
           if (t > j0 && t < j0 + jd) { const q = sinp((t - j0) / jd); mix(p, { fBx: 70, fFx: 20, fBy: -60, fFy: -60, fBa: -20, fFa: 20, arcF: 1 }, q); }
           mix(p, { armX: -120, armY: -175, eyeHappy: 1, smile: 1, grin: 1 }, win(t, o1.start, o1.end + 0.2));
@@ -361,67 +363,58 @@
         mix(p, { lookX: 1, grin: 0, smile: T ? 0.9 : 0, eyeOpen: T ? 0.9 : 0.5, frown: T ? 0 : 0.4, headRot: T ? 8 : 0, wink: T ? 1 : 0 }, win(t, enc - 1.3, enc + 0.2, 0.08, 0.2));
       }
 
-      // =============== ENCORE: the tap number ===============
+      // =============== ENCORE: dance, then the guitarist hogs the finale while they bow ===============
       if (t > enc - 0.5) {
         const E = (n) => eb(n);
-        // 0–16: charleston under the follow-spots
         mix(p, Object.assign(V.charleston(b, k), { eyeHappy: T ? 1 : 0, smile: T ? 1 : 0.3, micT: 0.62 }), win(t, E(0), E(16), 0.3, 0.2));
-        // 16–32: TAP-OFF
         const tapT = (a, z) => win(t, E(a), E(z), 0.1, 0.1);
         if (T) {
-          mix(p, Object.assign(V.tap(bt * 2, 1), { grin: 1, eyeHappy: 1, micT: 0.62 }), tapT(16, 20));   // fast riff
-          mix(p, { lookX: 1, eyeOpen: 0.9, smile: 0.9, brow: 1, armX: -40, armY: 60 }, tapT(20, 24));     // "your turn"
-          mix(p, Object.assign(V.tap(bt * 2, 1), { grin: 1, eyeOpen: 1.2, micT: 0.62 }), tapT(24, 27));
-          mix(p, Object.assign(jump(t, E(27), 0.5, 110), { armX: -130, armY: -175 }), tapT(26.6, 28.3));  // heel-click jump
-          if (t > E(27) && t < E(27) + 0.5) mix(p, { fBx: 70, fFx: 20, fBy: -60, fFy: -60, arcF: 1 }, sinp((t - E(27)) / 0.5));
-          mix(p, { lookX: 1, eyeOpen: 1, smile: 0.9, lidTilt: -0.3, armX: -40, armY: 60 }, tapT(28.3, 32));
+          mix(p, Object.assign(V.tap(bt * 2, 1), { grin: 1, eyeHappy: 1, micT: 0.62 }), tapT(16, 20));
+          mix(p, { lookX: 1, eyeOpen: 0.9, smile: 0.9, brow: 1, armX: -40, armY: 60 }, tapT(20, 24));
+          mix(p, Object.assign(V.tap(bt * 2, 1), { grin: 1, eyeOpen: 1.2, micT: 0.62 }), tapT(24, 28));
+          mix(p, { lookX: 1, eyeOpen: 1, smile: 0.9, lidTilt: -0.3, armX: -40, armY: 60 }, tapT(28, 32));
         } else {
           mix(p, { lookX: 1, eyeOpen: 1.2, pupil: 0.6, browR: 1 }, tapT(16, 20));
-          // one sad stomp
           const st = E(21);
           mix(p, { fFy: -70, fFx: 10, lean: -4, eyeOpen: 0.9, frown: 0.2 }, win(t, st - 0.35, st, 0.25, 0.02));
           mix(p, { fFy: 0, sq: 0.94, hipDy: 22, arcF: 1, eyeOpen: 0.02, frown: 0.4 }, win(t, st, st + 0.25, 0.02, 0.12));
           mix(p, { lookX: -1, eyeOpen: 0.5, shrug: -14, armX: -90, armY: 30, hand: 'open', handRot: -60 }, win(t, st + 0.5, E(24), 0.15, 0.1));
           mix(p, { lookX: 1, eyeOpen: 1.2, pupil: 0.5, sweat: 1 }, tapT(24, 28));
-          // tries the riff — trips over his own feet
           const tr = E(28.5);
-          mix(p, Object.assign(V.scramble(bt * 1.5, k), { eyeOpen: 1.2, sweat: 1, tongueOut: 1 }), win(t, E(28), tr, 0.1, 0.05));
-          mix(p, { lean: 22, headRot: 18, fFx: 60, fFy: -30, fBx: -30, armX: -170, armY: -100, hand: 'open', armFront: 0, eyeOpen: 1.35, bulge: 1.2, pupil: 0.4, jaw: 0.6, mouthO: 1, arcE: 1, sweat: 2 }, win(t, tr, tr + 0.6, 0.06, 0.2));
+          mix(p, Object.assign(V.scramble(bt * 1.5, k), { eyeOpen: 1.2, sweat: 1 }), win(t, E(28), tr, 0.1, 0.05));
+          mix(p, { lean: 22, headRot: 18, fFx: 60, fFy: -30, fBx: -30, armX: -170, armY: -100, hand: 'open', eyeOpen: 1.35, bulge: 1.2, pupil: 0.4, jaw: 0.6, mouthO: 1, arcE: 1, sweat: 2 }, win(t, tr, tr + 0.6, 0.06, 0.2));
           mix(p, { lookX: -1, eyeOpen: 0.5, grin: 1, smile: 1, sweat: 1, lidTilt: 0.2 }, win(t, tr + 0.6, E(32), 0.12, 0.1));
         }
-        // 32–48: kick line (short one lower and late)
-        mix(p, Object.assign(V.kick(b, k, T ? 1 : 0.65), { grin: 1, smile: 1, eyeOpen: T ? 1.1 : 1.2, micT: 0.62, pupil: T ? 1 : 0.7 }), win(t, E(32), E(48), 0.2, 0.3));
-        mix(p, Object.assign(V.bounce(b, k), { eyeHappy: T ? 1 : 0 }), win(t, E(48), E(54), 0.3, 0.3));
-        // 54–60: the short one runs out of air
-        if (!T) {
-          const tw = E(54.5);
-          mix(p, { armFront: 1, armX: 120, armY: -150, hand: 'open', handRot: 150, eyeOpen: 0.4, smile: 0, frown: 0.5, earDroop: 0.7, sweat: 2, tongueOut: 1, sq: 0.96 }, win(t, tw, tw + 2.4, 0.2, 0.3));
-          mix(p, { lookX: -1, eyeOpen: 0.45 }, win(t, tw + 2.4, E(60), 0.1, 0.2));
-        } else mix(p, Object.assign(V.bounce(b, k), { hand: 'fist', armY: -175, eyeHappy: 1, smile: 1, grin: 1 }), win(t, E(54), E(60), 0.2, 0.3));
-        // 60–76: synced tap, both on the beat this time
-        mix(p, Object.assign(V.tap(bt, k), { grin: 1, smile: 1, eyeHappy: T ? 1 : 0, eyeOpen: T ? 1 : 1.05, micT: 0.62 }), win(t, E(60), E(76), 0.2, 0.2));
-        // 76–84: big bounce build
-        mix(p, Object.assign(V.bounce(b, k), { grin: 1, eyeOpen: 1.15 }), win(t, E(76), E(84.5), 0.2, 0.1));
-        // FINALE: the tall one does a split jump; the short one tries… and lands in a floor split
-        const sj = E(85);
+        // small kicks side by side
+        mix(p, Object.assign(V.kick(b, k, T ? 0.6 : 0.45), { grin: 1, smile: 1, eyeOpen: T ? 1.05 : 1.15, micT: 0.62 }), win(t, E(32), E(48), 0.2, 0.3));
+        // GUITAR SOLO: upstaged. The tall one side-eyes the guitarist, tries jazz hands, gives up; the short one nods along
+        const g0 = E(48), bow0 = E(78);
         if (T) {
-          mix(p, Object.assign(jump(t, sj, 0.6, 85), {}), win(t, sj - 0.3, sj + 0.9, 0.01, 0.01));
-          if (t > sj && t < sj + 0.6) mix(p, { fBx: -190, fFx: 190, fBy: -90, fFy: -90, armX: -170, armY: -170, eyeHappy: 1, grin: 1, arcF: 1 }, sinp((t - sj) / 0.6));
-          mix(p, { lookX: 1, lookY: 0.7, eyeOpen: 1.3, bulge: 1.1, pupil: 0.5, jaw: 0.25, mouthO: 1 }, win(t, E(88.2), E(89.6), 0.08, 0.1));
+          mix(p, Object.assign(V.bounce(b, k, 0.3), { lookX: 1, lookY: 0.2, frown: 0.4, browTilt: 0.7, eyeOpen: 0.7, smile: 0, micT: 0.62 }), win(t, g0, E(60), 0.3, 0.2));
+          mix(p, { armX: -160, armY: -150, hand: 'open', handRot: 20 * Math.sin(t * 18), grin: 1, smile: 1, eyeOpen: 1.2, lookX: -1, puff: 0.5, micT: 0.62 }, win(t, E(60), E(66), 0.2, 0.2));
+          mix(p, { lookX: 1, eyeOpen: 0.5, frown: 0.5, armX: -20, armY: 160, micT: 0.62 }, win(t, E(66), bow0, 0.2, 0.2));
         } else {
-          const sj2 = E(87);
-          mix(p, jump(t, sj2, 0.5, 70, 0.6), win(t, sj2 - 0.3, sj2 + 0.6, 0.01, 0.01));
-          const split = win(t, sj2 + 0.5, 1e9, 0.08, 0.01);
-          mix(p, { hipDy: 158, fBx: -125, fFx: 125, fBy: 0, fFy: 0, fBa: 10, fFa: -10, lean: 0, hipRot: 0, hipDx: 0, eyeOpen: 1.35, bulge: 1.3, pupil: 0.35, jaw: 0.5, mouthO: 1, earDroop: -0.6, arcE: 1, sq: 0.97 }, split);
-          mix(p, { arcE: 0, jaw: 0, mouthO: 0, grin: 1, smile: 1, sweat: 2, eyeOpen: 1.2, pupil: 0.6, armX: -140, armY: -150, lookX: -0.6 }, win(t, sj2 + 1.3, 1e9, 0.15, 0.01));
+          mix(p, { lookX: -1, eyeOpen: 0.75, smile: 0.5, micT: 0.62, headRot: 6 * Math.sin(Math.PI * bt), headDy: 6 * Math.abs(Math.sin(Math.PI * bt)) }, win(t, g0, bow0, 0.3, 0.2));
         }
+        // the solo pushes them aside (tiny shuffling steps), they come back for the bows
+        const aside = smooth((t - g0) / 0.9) * (1 - smooth((t - (bow0 - 1.0)) / 0.9));
+        p.dx += (T ? -70 : -150) * aside;
+        mix(p, V.scramble(bt, k), Math.max(win(t, g0, g0 + 0.9, 0.1, 0.1), win(t, bow0 - 1.0, bow0 - 0.1, 0.1, 0.1)));
+        // BOWS: the tall one bows deep, hand on heart; the short one bows late and shallow
+        const bw = bow0 + (T ? 0 : 0.45);
+        const bowP = { lean: T ? 48 : 34, headRot: T ? 30 : 22, hipDx: T ? -30 : -20, hipDy: 14, armFront: 1, armX: T ? 92 : 80, armY: T ? 70 : 60, hand: 'open', handRot: 80, micT: 0.15, eyeHappy: 1, smile: 0.6, fBy: 0, fFy: 0, fBx: 0, fFx: 0 };
+        // spread out for the bows so they don't bump heads
+        p.dx += (T ? -130 : 70) * win(t, bow0 - 0.9, encEnd - 0.2, 0.8, 0.6);
+        mix(p, V.scramble(bt, k), win(t, bow0 - 0.9, bow0 - 0.1, 0.1, 0.1));
+        mix(p, bowP, win(t, bw, E(84), 0.45, 0.45));
+        mix(p, bowP, win(t, E(86) + (T ? 0 : 0.4), encEnd - 0.4, 0.45, 0.4));
       }
-      // the real final pose on the band's last hit
+      // up from the bow into a final showy pose on the band's last hit… then they notice the turtle's clock
       {
         const fp2 = encEnd + (T ? 0 : 0.25);
-        const showy = { armX: -150, armY: -175, hand: 'open', grin: 1, smile: 1, eyeOpen: 1.2, brow: 1, micT: 1 };
-        if (T) Object.assign(showy, { fFx: 30, fFy: 0, fBy: 0, hipDx: 0, hipRot: 0, lean: -6, headRot: -8, hipDy: 14, lookX: -0.3 });
+        const showy = { armX: -150, armY: -175, hand: 'open', grin: 1, smile: 1, eyeOpen: 1.2, brow: 1, micT: 1, lean: -6, headRot: -8, hipDy: 14, fFx: 30, fFy: 0, fBy: 0, hipDx: 0, hipRot: 0, lookX: -0.3 };
         mix(p, showy, win(t, fp2, 1e9, 0.2, 0.01));
+        mix(p, { lookX: 1, grin: 0, smile: 0.2, eyeOpen: 1.1, frown: 0.3, sweat: 1 }, win(t, this.data.musicEnd + 0.4, 1e9, 0.12, 0.01));
       }
 
       // blink (not when eyes are deliberately shut or winking)
@@ -452,83 +445,47 @@
       const s1 = this.C('s1a').start;
       star += 18 * Math.sin((t - s1) * 6) * win(t, s1, s1 + 1.6, 0.05, 0.8);
       star += 25 * Math.sin((t - me) * 3) * win(t, me + 0.1, me + 4, 0.2, 1.2);
-      // FANTASY vs REALITY: on every 'big' line the stage becomes their Vegas; the next question snaps it back
-      const C = (k) => this.C(k);
-      let F = 0;
-      F = Math.max(F, win(t, C('s1a').start - 0.05, C('s1b').start, 0.12, 0.02));
-      F = Math.max(F, win(t, C('v2e').start, C('s2a').start + 0.05, 0.3, 0.02));
-      F = Math.max(F, win(t, C('o1').start - 0.05, C('o2').start, 0.12, 0.02));
-      F = Math.max(F, win(t, enc, me, 0.3, 0.02));
-      // the bad bulb flickers right after every snap back to reality
-      for (const sn of [C('s1b').start, C('s2a').start + 0.05, C('o2').start]) if (t > sn && t < sn + 0.5) bad = hash(Math.floor(t * 16)) > 0.5 ? 1 : 0;
       const pT = this.pose('T', t), pS = this.pose('S', t);
-      return { t, curtain, badBulb: bad, star, chase: F > 0.5 ? 1 : 0, spot: F, spotT: pT.x + pT.dx, spotS: pS.x + pS.dx, fantasy: F, fantasyT: t };
+      return { t, curtain, poolT: pT.x + pT.dx, poolS: pS.x + pS.dx, glow: 0.5 };
     }
 
     orchestra(t) {
+      const C = (k) => this.C(k), m = this.data.markers;
       const b = this.beat(t);
-      const end = this.data.musicEnd - 0.05;
-      const playing = t < this.data.musicEnd ? 1 : 0;
-      const o5 = this.C('o5').end, enc = this.data.markers.instr ? this.data.markers.instr[0][0] : 1e9;
+      const me = this.data.musicEnd, end = me - 0.05;
+      const playing = t < me && t > m.open ? 1 : 0;
+      const enc = this.encT(), g0 = this.E(48);
+      const mw1 = C('v3b').start + 1.7;
+      // the turtle's clock: four looks across the show; the hands advance each time
+      const looks = [[m.open + 0.6, m.open + 2.4], [C('s2d').end + 0.2, C('s2d').end + 1.8], [enc - 1.6, enc + 1.0], [me + 0.3, 1e9]];
+      let tLook = 0, tRaise = 0, clock = 0;
+      looks.forEach(([a, z], i) => {
+        tLook = Math.max(tLook, win(t, a, z, 0.25, 0.3));
+        if (i === 1 || i === 3) tRaise = Math.max(tRaise, win(t, a + 0.1, z, 0.2, 0.3));
+        clock += smooth((t - a) / 0.6) * 0.22;
+      });
       return {
-        t, beat: playing ? b : Math.floor(b),
-        bassBrow: win(t, this.C('v2b').start + 0.3, this.C('v2d').start + 0.3, 0.15, 0.3),
-        // ba-dum-tss right after the punchline
-        rim: win(t, o5 + 0.15, o5 + 0.45, 0.04, 0.15),
+        t, beat: playing ? b : Math.floor(b), playing,
+        bassBrow: win(t, C('v2b').start + 1.6, C('v2b').start + 3.6, 0.15, 0.3),
+        dry: win(t, mw1, mw1 + 0.18, 0.02, 0.12),
         finalHit: win(t, end, end + 0.35, 0.05, 0.2),
-        cymbal: win(t, end + 0.05, end + 0.6, 0.02, 0.4) * Math.sin((t - end) * 30) + win(t, o5 + 0.3, o5 + 0.9, 0.02, 0.3) * Math.sin((t - o5) * 34),
+        cymbal: win(t, mw1, mw1 + 0.5, 0.02, 0.3) * Math.sin((t - mw1) * 34) + win(t, end + 0.05, end + 0.6, 0.02, 0.4) * Math.sin((t - end) * 30),
+        solo: win(t, g0, me, 0.4, 0.05), soloBeat: b,
+        tLook, tRaise, clock, tSigh: win(t, enc - 0.8, enc + 0.6, 0.2, 0.3), tLid: 0.5 - 0.15 * tRaise, tBlink: ((t * 0.29) % 5.3) < 0.13,
         faces: this.monkeyFaces(t),
-        drumBob: win(t, this.E(36), this.E(44), 0.3, 0.05),
-        tss: win(t, this.E(21) + 0.3, this.E(21) + 0.55, 0.03, 0.12),
         pianoNod: 4 * win(t, end + 0.2, end + 0.7, 0.1, 0.2),
         bassNod: 3 * win(t, end + 0.4, end + 0.9, 0.1, 0.2),
       };
     }
 
-    // the orchestra's own little story: bored → dragged in → caught enjoying it → deadpan to camera
+    // the band stays indifferent: a yawn, one raised eyebrow, a deadpan stare at the very end
     monkeyFaces(t) {
-      const C = (k) => this.C(k), m = this.data.markers, f = { piano: {}, bass: {}, drums: {} };
+      const C = (k) => this.C(k), m = this.data.markers, f = { piano: {}, bass: {}, drums: {}, guitar: {} };
       const on = (a, z) => t >= a && t <= z;
-      const all = (a, z, o, per = {}) => { if (!on(a, z)) return; for (const k of ['piano', 'bass', 'drums']) Object.assign(f[k], o, per[k] || {}); };
-      const one = (k, a, z, o) => { if (on(a, z)) Object.assign(f[k], o); };
-      const enc = this.encT(), me = this.data.musicEnd;
-      // intro: they glance at the two stars; the pianist yawns
-      all(m.open + 1.0, m.open + 3.4, { lookX: 0 }, { piano: { lookX: 0.8 }, bass: { lookX: -0.4 }, drums: { lookX: -0.8 } });
-      one('piano', m.open + 4.4, m.open + 5.6, { mouth: 'yawn', lid: 1, tilt: -8 });
-      // the jump: heads follow it up
-      all(C('s1a').start, C('s1a').end + 0.3, { lookY: -1, lid: 0.2 }, { piano: { lookX: 0.7 }, bass: { lookX: -0.7 }, drums: { lookX: -0.9 } });
-      // the moth: everyone watches it fly away
-      all(C('s1b').end + 0.1, C('s1b').end + 1.5, { lookY: -1, lid: 0.15, noBlink: 1 }, { piano: { lookX: 1 }, bass: { lookX: 0.7 }, drums: { lookX: -0.6 } });
-      // "mom": the bassist melts a little, the drummer smirks
-      one('bass', C('s1e').start, C('s1e').end + 0.4, { brow: 0.8, mouth: 'smile', lid: 0.35 });
-      one('drums', C('s1e').start + 0.3, C('s1e').end + 0.4, { mouth: 'smirk', lookX: -0.6 });
-      // the Vegas dream during the long note: the pianist rolls her eyes
-      one('piano', C('v2e').start + 1, C('v2e').start + 3, { lookY: -1, lid: 0.4 });
-      // "expense": all three look at the belly
-      const d = C('s2d');
-      all(d.end - 0.2, d.end + 1.1, { lookY: 0.7, lid: 0.35 }, { piano: { lookX: 1 }, bass: { lookX: 1 }, drums: { lookX: -1 } });
-      // the moonwalk: the bassist and drummer follow it like a tennis match
-      const mw0 = C('v3b').start;
-      if (on(mw0, mw0 + 3.2)) { const sw = Math.sin((t - mw0) * 4.2); f.bass.lookX = sw; f.drums.lookX = -0.4 + 0.6 * sw; f.bass.lid = 0.3; }
-      // punchline: rimshot and smirk; pianist rolls her eyes
-      const o5 = C('o5').end;
-      one('drums', o5 + 0.1, o5 + 1.3, { mouth: 'smirk', lid: 0.45 });
-      one('piano', o5 + 0.2, o5 + 1.4, { lookY: -1, lid: 0.4 });
-      // "so who's the donkey here?" — all three look straight into the camera
-      all(C('o6').start + 0.2, C('o6').end + 1.0, { lookX: 0, lookY: 0.1, lid: 0.25, mouth: 'flat', tilt: 0, noBlink: 1 });
-      // the encore starts: deep eye roll
-      one('piano', enc - 0.5, enc + 1.6, { lookY: -1, lid: 0.35 });
-      one('bass', enc - 0.2, enc + 1.2, { lid: 0.7 });
-      // tap-off: the drummer answers the sad stomp with one 'tss' and a smirk
-      one('drums', this.E(21) + 0.3, this.E(21) + 1.4, { mouth: 'smirk', lookX: -0.8 });
-      // kick line: the drummer gets into it… then catches herself
-      one('drums', this.E(36), this.E(44), { mouth: 'smile', lid: 0.25, lookX: -0.5 });
-      one('drums', this.E(44), this.E(45.5), { mouth: 'o', lid: 0.1, lookX: 0, lookY: 0, noBlink: 1 });
-      one('drums', this.E(45.5), this.E(48), { mouth: 'flat', lid: 0.65 });
-      // the floor split: they all stare at the short one
-      all(this.E(87) + 0.6, me, { lookY: 0.7, lid: 0.3 }, { piano: { lookX: 1 }, bass: { lookX: 1, brow: 0.8 }, drums: { lookX: -1 } });
-      // after the last hit: deadpan to camera
-      all(me + 0.5, 1e9, { lookX: 0, lookY: 0.1, lid: 0.45, mouth: 'flat', noBlink: 1 });
+      const me = this.data.musicEnd;
+      if (on(m.open + 4.4, m.open + 5.6)) Object.assign(f.piano, { mouth: 'yawn', lid: 1 });
+      if (on(C('v2b').start + 1.6, C('v2b').start + 3.6)) Object.assign(f.bass, { lookX: 0.6 });
+      if (on(me + 0.5, 1e9)) for (const k of ['piano', 'bass', 'drums']) Object.assign(f[k], { lookX: 0, lookY: 0.1, lid: 0.5, noBlink: 1 });
       return f;
     }
 

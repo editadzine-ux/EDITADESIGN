@@ -30,10 +30,9 @@ k = np.round((b - b[0]) / np.median(np.diff(b)))
 slope, icpt = np.polyfit(k, b, 1)
 data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd': 158.45, 'duration': 159.6,
   'markers': {'open': 1.5, 'inhale': 8.55, 'instr': [[107.2, 157.6]]}, 'cues': cues,
-  'shots': [{'t':0,'k':'wide'},{'t':11.62,'k':'cuS'},{'t':15.1,'k':'wide'},{'t':26.3,'k':'two'},{'t':33.55,'k':'cuT'},
-            {'t':35.55,'k':'two'},{'t':37.5,'k':'wide'},{'t':55.75,'k':'two'},{'t':66.2,'k':'cuS'},{'t':67.85,'k':'full'},
-            {'t':85.7,'k':'two'},{'t':101.0,'k':'cuBass'},{'t':101.8,'k':'two'},{'t':103.9,'k':'wide'},{'t':107.2,'k':'full'},{'t':115.5,'k':'feet'},{'t':117.65,'k':'full'},{'t':120.85,'k':'feet'},{'t':122.6,'k':'full'},{'t':124.05,'k':'wide'},{'t':129.95,'k':'cuDrum'},{'t':131.55,'k':'full'},
-            {'t':139.0,'k':'feet'},{'t':142.3,'k':'full'},{'t':147.55,'k':'wide'},{'t':158.9,'k':'band'}]}
+  'shots': [{'t':0,'k':'wide'},{'t':13.8,'k':'two'},{'t':26.3,'k':'dlg'},{'t':33.55,'k':'cuT'},{'t':37.5,'k':'wide'},
+            {'t':43.7,'k':'cuBass'},{'t':45.9,'k':'two'},{'t':55.75,'k':'dlg'},{'t':66.2,'k':'cuS'},{'t':67.85,'k':'wide'},
+            {'t':85.7,'k':'dlg'},{'t':103.9,'k':'wide'},{'t':132.5,'k':'cuGuit'},{'t':136.6,'k':'wide'}]}
 # vocal envelope at 60 fps (drives jaw openness)
 y, sr = librosa.load(voc, sr=16000, mono=True)
 hop = sr // 60

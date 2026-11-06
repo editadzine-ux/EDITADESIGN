@@ -44,7 +44,7 @@
   }
 
   // ear centerline path with bend; returns outer path and inner (pink) path
-  function earPaths(L, W, bend) {
+  function earPaths(L, W, bend, blunt) {
     const n = 12, left = [], right = [], il = [], ir = [];
     let x = 0, y = 0, ang = -90;
     const pts = [];
@@ -58,7 +58,7 @@
     for (let i = 0; i <= n; i++) {
       const s = i / n;
       const [px, py, a] = pts[i];
-      const w = W * (0.62 + 0.55 * Math.sin(Math.PI * Math.min(1, s * 1.05 + 0.08))) * (1 - Math.pow(s, 3) * 0.95) * 0.5;
+      const w = blunt ? W * 0.5 * (0.55 + 0.45 * Math.min(1, s * 3)) * (s > 0.9 ? Math.sqrt(Math.max(0, 1 - Math.pow((s - 0.9) / 0.1, 2))) : 1) : W * (0.62 + 0.55 * Math.sin(Math.PI * Math.min(1, s * 1.05 + 0.08))) * (1 - Math.pow(s, 3) * 0.95) * 0.5;
       const nx = Math.cos((a - 90) * D2R), ny = Math.sin((a - 90) * D2R);
       left.push([px + nx * w, py + ny * w]);
       right.push([px - nx * w, py - ny * w]);
@@ -77,25 +77,25 @@
 
   const SPECS = {
     T: {
-      name: 'tall', skin: '#bdb6ab', hand: '#d8d2c9', muzzle: '#f2dccb', earIn: '#efb9b0', mane: '#665e56',
-      suit: '#6c9f98', suitShade: '#5a8b84', shirt: '#fbf8f0', tie: '#231f1d', belt: '#231f1d', buckle: '#e8b84a', sock: '#fbf8f0',
+      name: 'tall', skin: '#f2c3ad', earOut: '#f3b6a3', hand: '#f5cbb7', muzzle: '#f9dccf', earIn: '#f8d2c5', mane: '#9b4f2b',
+      suit: '#1fa39b', suitShade: '#168a83', shirt: '#fffdf6', tie: '#151515', belt: '#151515', buckle: '#e9b54a', sock: '#fffdf6', buttons: 2,
       hipY: -300, hipHalf: 26, thigh: 152, shin: 146, footSpread: 40, legW: 44, shinW: 38, pantsEnd: 0.7, sockW: 15,
       torsoH: 178, shoulderHalf: 54, waistHalf: 62, belly: 4, hem: 22,
       upper: 88, fore: 84, armW: 32, foreW: 28,
       neckLen: 96, neckW: 30, neckAng: 14,
-      head: { cr: 44, cx: 2, cy: -44, mx: 112, my: -40, mrx: 44, mry: 30, mrot: -14, eye1: [36, -66], eye2: [60, -72], er: 11, teeth: 'row', earL: 140, earW: 40, sc: 1.32 },
-      ears: [{ x: -14, y: -78, ang: -30, bend: -8 }, { x: 12, y: -84, ang: 2, bend: 5 }],
-      tail: true, scale: 1,
+      head: { cr: 44, cx: 2, cy: -44, mx: 112, my: -40, mrx: 44, mry: 30, mrot: -14, eye1: [36, -66], eye2: [60, -72], er: 11, teeth: 'buck', earL: 150, earW: 54, sc: 1.32 },
+      ears: [{ x: -14, y: -78, ang: -26, bend: -6 }, { x: 12, y: -84, ang: 4, bend: 5 }],
+      tail: false, scale: 1,
     },
     S: {
-      name: 'short', skin: '#c88f6c', hand: '#ecc6ab', muzzle: '#f4ddcd', earIn: '#f0b6a8', mane: '#5a4234',
-      suit: '#e2ae45', suitShade: '#c9952f', shirt: '#fbf8f0', tie: '#b9463c', belt: '#7a5636', buckle: '#e8c25a', sock: '#fbf8f0',
+      name: 'short', skin: '#f2a172', earOut: '#f2a172', hand: '#f7c9ae', muzzle: '#f8d4c2', earIn: '#f6b79c', mane: '#8a4524',
+      suit: '#f3b51e', suitShade: '#d99c12', shirt: '#fffdf6', tie: '#a3182a', belt: '#6e4524', buckle: '#e9b54a', sock: '#fffdf6', buttons: 1,
       hipY: -196, hipHalf: 32, thigh: 98, shin: 90, footSpread: 44, legW: 62, shinW: 50, pantsEnd: 0.78, sockW: 18,
       torsoH: 152, shoulderHalf: 52, waistHalf: 80, belly: 26, hem: 26,
       upper: 74, fore: 68, armW: 34, foreW: 30,
       neckLen: 40, neckW: 40, neckAng: 18,
-      head: { cr: 48, cx: 0, cy: -46, mx: 96, my: -34, mrx: 52, mry: 40, mrot: -8, eye1: [34, -70], eye2: [60, -74], er: 12, teeth: 'buck', earL: 118, earW: 44, sc: 1.3 },
-      ears: [{ x: -18, y: -80, ang: -62, bend: -64 }, { x: 12, y: -88, ang: 4, bend: 6 }],
+      head: { cr: 48, cx: 0, cy: -46, mx: 96, my: -34, mrx: 52, mry: 40, mrot: -8, eye1: [34, -70], eye2: [60, -74], er: 12, teeth: 'buck', earL: 185, earW: 42, sc: 1.3 },
+      ears: [{ x: -16, y: -80, ang: -20, bend: 0, len: 0.18 }, { x: 10, y: -88, ang: 18, bend: -130, blunt: 1 }],
       tail: false, scale: 1,
     },
   };
@@ -172,7 +172,7 @@
       // collar points
       el('path', { d: `M-18,${-H - 2} L-4,${-H + 12} L-22,${-H + 16} Z M18,${-H - 2} L4,${-H + 12} L22,${-H + 16} Z`, fill: s.shirt, stroke: INK, 'stroke-width': 3, 'stroke-linejoin': 'round' }, g);
       // button
-      el('circle', { cx: -wh * 0.62 - b * 0.4, cy: -H * 0.32, r: 6.5, fill: s.buckle, stroke: INK, 'stroke-width': 3 }, g);
+      for (let i = 0; i < (s.buttons || 1); i++) el('circle', { cx: -wh * 0.62 - b * 0.4, cy: -H * (0.42 - i * 0.2), r: 8, fill: s.buckle, stroke: INK, 'stroke-width': 3 }, g);
       this.torsoPts = { shoulderB: [-sh + 6, -H + 14], shoulderF: [sh - 6, -H + 14], neck: [6, -H + 4] };
       // empty pockets turned inside out (hidden until needed)
       this.pockets = [-1, 1].map((k) => {
@@ -195,7 +195,7 @@
       // back ear behind head
       const mkEar = (parent) => {
         const g = el('g', {}, parent);
-        const o = el('path', { fill: s.skin, stroke: INK, 'stroke-width': 4.5, 'stroke-linejoin': 'round' }, g);
+        const o = el('path', { fill: s.earOut || s.skin, stroke: INK, 'stroke-width': 4.5, 'stroke-linejoin': 'round' }, g);
         const i = el('path', { fill: s.earIn }, g);
         return { g, o, i };
       };
@@ -227,8 +227,7 @@
           el('path', { d: `M${x},${y0} L${x + 0.3},${y0 + 17}`, stroke: INK, 'stroke-width': 2.5 }, this.teeth);
         }
       } else {
-        el('path', { d: `M${tx + 4},${ty - 10} L${tx + 46},${ty - 14} L${tx + 47},${ty + 14} L${tx + 6},${ty + 18} Z`, fill: '#fffdf7', stroke: INK, 'stroke-width': 3.5, 'stroke-linejoin': 'round' }, this.teeth);
-        el('path', { d: `M${tx + 26},${ty - 12} L${tx + 27},${ty + 16}`, stroke: INK, 'stroke-width': 3 }, this.teeth);
+        el('path', { d: `M${tx + 18},${ty - 10} L${tx + 38},${ty - 12} L${tx + 39},${ty + 18} L${tx + 19},${ty + 20} Z M${tx + 40},${ty - 12} L${tx + 60},${ty - 14} L${tx + 61},${ty + 16} L${tx + 41},${ty + 18} Z`, fill: '#fffdf7', stroke: INK, 'stroke-width': 3.5, 'stroke-linejoin': 'round' }, this.teeth);
       }
       this.teethY = ty;
       // closed mouth line
@@ -287,9 +286,9 @@
       const cuff = el('path', { d: capsule(10, s.foreW + 4, s.foreW + 4, 0), fill: s.shirt, stroke: INK, 'stroke-width': 3.5 }, g);
       const micG = el('g', {}, g);
       if (kind === 'mic') {
-        el('path', { d: 'M-5,0 L-6,-70 L6,-70 L5,0 Z', fill: '#2f2a28', stroke: INK, 'stroke-width': 3 }, micG);
-        el('circle', { cx: 0, cy: -82, r: 16, fill: '#b9b4ad', stroke: INK, 'stroke-width': 3.5 }, micG);
-        el('path', { d: 'M-11,-90 L11,-74 M-11,-74 L11,-90 M-15,-82 L15,-82 M0,-97 L0,-67', stroke: '#6e6964', 'stroke-width': 2 }, micG);
+        el('path', { d: 'M-6,0 L-7,-68 L7,-68 L6,0 Z', fill: '#4a3a2e', stroke: INK, 'stroke-width': 3 }, micG);
+        el('circle', { cx: 0, cy: -82, r: 17, fill: '#efe2c0', stroke: INK, 'stroke-width': 3.5 }, micG);
+        el('path', { d: 'M-12,-90 L12,-90 M-15,-82 L15,-82 M-12,-74 L12,-74 M-8,-96 L-8,-68 M0,-98 L0,-66 M8,-96 L8,-68', stroke: '#8a7a5a', 'stroke-width': 1.8 }, micG);
       }
       const hand = el('g', {}, g);
       const shapes = {
@@ -431,7 +430,7 @@
         const E = this.earG[i];
         const a = e.ang + ear.rot * (i ? 1 : 1.25) + (p.earDroop || 0) * (i ? 30 : 18);
         const bend = e.bend + ear.bend * (i ? 0.8 : 1.4) + (p.earDroop || 0) * 40;
-        const { outer, inner } = earPaths(h.earL * (i ? 1 : 0.94), h.earW, bend);
+        const { outer, inner } = earPaths(h.earL * (e.len || (i ? 1 : 0.94)), h.earW * (e.len ? 0.7 : 1), bend, e.blunt);
         E.o.setAttribute('d', outer);
         E.i.setAttribute('d', inner);
         E.g.setAttribute('transform', `translate(${e.x},${e.y}) rotate(${f1(a)})`);

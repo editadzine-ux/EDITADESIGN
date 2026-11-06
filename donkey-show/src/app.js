@@ -4,7 +4,7 @@
   const DS = window.DS;
   const params = new URLSearchParams(location.search);
   const RENDER = params.has('render');
-  const STORE = 'donkey-show-timing-v2';
+  const STORE = 'donkey-show-timing-v3';
   const $ = (s) => document.querySelector(s);
 
   // ---------- data ----------
@@ -44,15 +44,13 @@
   const badge = $('#badge');
 
   const SHOTS = {
-    wide: { s: 0.9, cx: 960, cy: 575 },
-    two: { s: 1.15, cx: 965, cy: 458 },
-    cuT: { s: 1.5, cx: 730, cy: 410 },
+    wide: { s: 0.9, cx: 960, cy: 560 },
+    two: { s: 1.15, cx: 970, cy: 470 },
+    dlg: { s: 1.4, cx: 975, cy: 400 },
+    cuT: { s: 1.5, cx: 740, cy: 410 },
     cuS: { s: 1.95, cx: 1345, cy: 515 },
-    full: { s: 1.0, cx: 965, cy: 555 },
-    feet: { s: 1.6, cx: 965, cy: 770 },
-    band: { s: 1.25, cx: 975, cy: 740 },
-    cuBass: { s: 2.5, cx: 945, cy: 735 },
-    cuDrum: { s: 2.6, cx: 1560, cy: 760 },
+    cuBass: { s: 2.2, cx: 440, cy: 650 },
+    cuGuit: { s: 2.1, cx: 1650, cy: 660 },
   };
 
   function earLag(id, t) {
