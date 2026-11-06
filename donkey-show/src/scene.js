@@ -34,12 +34,13 @@
     el('path', { d: 'M85,985 L85,1018 A875,64 0 0 0 1835,1018 L1835,985 Z', fill: C.platformRim, stroke: INK, 'stroke-width': 3.5 }, g);
     el('ellipse', { cx: 960, cy: 985, rx: 875, ry: 64, fill: C.platform, stroke: INK, 'stroke-width': 3.5 }, g);
     const pools = [el('ellipse', { cx: 680, cy: 982, rx: 300, ry: 46, fill: 'url(#pool)' }, g), el('ellipse', { cx: 1265, cy: 982, rx: 300, ry: 46, fill: 'url(#pool)' }, g)];
+    const soloSpot = el('ellipse', { cx: 1535, cy: 854, rx: 190, ry: 20, fill: 'url(#pool)', opacity: 0 }, g);
     for (const x of [210, 470, 780, 960, 1140, 1450, 1710]) {
       const yy = 1018 + 64 * Math.sqrt(Math.max(0, 1 - Math.pow((x - 960) / 875, 2))) - 8;
       el('circle', { cx: x, cy: yy, r: 22, fill: 'url(#bulbGlow)' }, g);
       el('circle', { cx: x, cy: yy, r: 10, fill: C.bulb, stroke: INK, 'stroke-width': 2.5 }, g);
     }
-    return { g, pools };
+    return { g, pools, soloSpot };
   }
 
   function buildLights(world) {
@@ -99,6 +100,16 @@
     if (shoe) el('path', { d: shoe, fill: INK }, end);
     else el('path', { d: 'M-9,-3 C-12,8 -6,16 0,16 C7,16 12,8 9,-3 Z M-9,4 L-14,10', fill: C.skin, stroke: INK, 'stroke-width': 3, 'stroke-linejoin': 'round' }, end);
     return { g, up, lo, end, l1 };
+  }
+  // 2-bone IK in a limb's parent space; returns [upperAngle, lowerRelAngle] for limb()/setLimb()
+  function ikLimb(sx, sy, tx, ty, l1, l2, bendSign) {
+    let dx = tx - sx, dy = ty - sy, d = Math.hypot(dx, dy);
+    const mx = l1 + l2 - 0.5; if (d > mx) { dx *= mx / d; dy *= mx / d; d = mx; }
+    d = Math.max(d, Math.abs(l1 - l2) + 1);
+    const a = Math.atan2(dy, dx), A = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d))));
+    const ua = a + bendSign * A, jx = sx + Math.cos(ua) * l1, jy = sy + Math.sin(ua) * l1;
+    const la = Math.atan2(sy + dy - jy, sx + dx - jx);
+    return [ua * 180 / Math.PI - 90, (la - ua) * 180 / Math.PI];
   }
   const setLimb = (L, a1, a2) => { L.up.setAttribute('transform', `rotate(${f1(a1)})`); L.lo.setAttribute('transform', `translate(0,${L.l1}) rotate(${f1(a2)})`); };
 
@@ -229,7 +240,6 @@
       el('path', { d: 'M-4,-238 L4,-238 L6,-196 L0,-188 L-6,-196 Z', fill: '#d8232a', stroke: INK, 'stroke-width': 2.5 }, torso);
       const headWrap = el('g', { transform: 'translate(0,-298)' }, torso);
       const head = monkeyHead(headWrap, null, 'pomp');
-      const armB = limb(torso, 28, -240, 52, 50, 18, '#253f92');
       const guitar = el('g', {}, torso);
       const gg = el('g', { transform: 'translate(-6,-168) rotate(-8)' }, guitar);
       el('path', { d: 'M22,-14 L150,-112 L162,-100 L36,-2 Z', fill: '#e6b05a', stroke: INK, 'stroke-width': 3.5, 'stroke-linejoin': 'round' }, gg);
@@ -240,7 +250,9 @@
       el('path', { d: 'M-22,-4 L8,-18 M-16,10 L14,-4', stroke: INK, 'stroke-width': 4 }, gg);
       for (const [x, y] of [[18, 20], [30, 8], [6, 30]]) el('circle', { cx: x, cy: y, r: 4.5, fill: C.gold, stroke: INK, 'stroke-width': 2 }, gg);
       el('path', { d: 'M-30,-2 L150,-106', stroke: '#f6ead0', 'stroke-width': 1.2 }, gg);
-      const armF = limb(torso, -28, -236, 58, 56, 18, '#253f92');
+      const armF = limb(torso, -28, -236, 60, 58, 18, '#253f92');
+      const armB = limb(torso, 28, -240, 54, 52, 18, '#253f92');
+      el('path', { d: 'M-4,10 L10,14 L2,24 Z', fill: '#f4e8c8', stroke: INK, 'stroke-width': 2 }, armB.end);
       const lines = el('path', { d: 'M170,-300 L196,-316 M178,-284 L204,-290', stroke: '#fff6e0', 'stroke-width': 3.5, 'stroke-linecap': 'round', display: 'none' }, torso);
       M.guitar = { r, body, torso, headWrap, head, legs, armB, armF, guitar, lines };
     }
@@ -304,21 +316,56 @@
     setLimb(M.drums.arms[1], -34, -66 + 18 * pulse(0.5) * play + 34 * acc);
     M.drums.cym[1].setAttribute('transform', `translate(150,-190) rotate(${f1(8 * (o.cymbal || 0))})`);
     // guitarist: strums on the beat; solo turns it into a stadium show
-    const G = M.guitar, solo = o.solo || 0, sb = o.soloBeat || 0;
-    const strum = Math.sin(o.beat * Math.PI * 2) * play;
-    const lean = -solo * (14 + 6 * Math.sin(sb * Math.PI));
-    const dip = 8 * Math.abs(sinb(1)) * play + solo * 30;
+    // guitarist: strums along; the solo is a stadium show (riff, bend, windmill, knee slide, guitar raise)
+    const G = M.guitar, solo = o.solo || 0, gt = o.gt == null ? -99 : o.gt;
+    const sm = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+    const wb = (a, z, fi = 0.5, fo = 0.5) => Math.min(sm((gt - a) / fi), sm((z - gt) / fo));
+    const bend = solo * Math.max(wb(4, 8), wb(20, 24), wb(28, 32));
+    const wind = solo * wb(8, 12, 0.3, 0.3);
+    const kneel = solo * wb(16, 28, 0.8, 1.2);
+    const raise = Math.max(solo * wb(32, 40), o.gRaise || 0);
+    const bang = solo * (1 - bend) * (1 - raise * 0.6);
+    const slide = -60 * solo * (sm((gt - 16) / 1.5) - sm((gt - 28) / 2.5));
+    const nod = Math.pow(Math.abs(Math.sin(o.beat * Math.PI)), 3);
+    const lean = -solo * 6 - bend * 22 - kneel * 18 - raise * 10;
+    const dip = 8 * Math.abs(sinb(1)) * play * (1 - solo) + solo * 18 + kneel * 62 + bang * 10 * nod;
+    G.r.setAttribute('transform', `translate(${f1(1535 + slide)},852)`);
     G.torso.setAttribute('transform', `translate(0,${f1(dip)}) rotate(${f1(lean)} 0 -120)`);
-    setLimb(G.legs[0], 30 + solo * 12, -18 - solo * 14); setLimb(G.legs[1], -30 - solo * 12, 18 + solo * 14);
+    // legs: wide stance → deeper in the solo → kneeling with shins out to the sides
+    const st = 30 + solo * 14;
+    setLimb(G.legs[0], st * (1 - kneel) + 22 * kneel, -18 * (1 - kneel) - 108 * kneel - solo * 14 * (1 - kneel));
+    setLimb(G.legs[1], -st * (1 - kneel) - 22 * kneel, 18 * (1 - kneel) + 108 * kneel + solo * 14 * (1 - kneel));
     G.legs[0].g.setAttribute('transform', `translate(-16,${f1(-128 + dip)})`); G.legs[1].g.setAttribute('transform', `translate(16,${f1(-128 + dip)})`);
-    setLimb(G.armB, 30 - 10 * strum - solo * 40 * Math.max(0, Math.sin(sb * Math.PI * 2)), -60 + 10 * strum);
-    setLimb(G.armF, -62 - solo * 22, -36 - solo * 10);
-    G.guitar.setAttribute('transform', `rotate(${f1(-solo * 18)} 0 -60)`);
-    G.headWrap.setAttribute('transform', `translate(0,-298) rotate(${f1(-solo * 18 + 4 * sinb(1) * play + solo * 10 * Math.sin(sb * Math.PI * 2))})`);
-    G.lines.setAttribute('display', solo > 0.5 && Math.sin(sb * Math.PI * 4) > 0 ? 'inline' : 'none');
+    // guitar: tilts up on bends, vertical when raised
+    const gRot = -bend * 22 - raise * 58 - kneel * 10;
+    G.guitar.setAttribute('transform', `rotate(${f1(gRot)} 0 -60)`);
+    const toTorso = (x, y) => {
+      const c8 = Math.cos(-8 * Math.PI / 180), s8 = Math.sin(-8 * Math.PI / 180);
+      let X = x * c8 - y * s8 - 6, Yy = x * s8 + y * c8 - 168;
+      const cr = Math.cos(gRot * Math.PI / 180), sr = Math.sin(gRot * Math.PI / 180);
+      const ox = X, oy = Yy + 60; return [ox * cr - oy * sr, ox * sr + oy * cr - 60];
+    };
+    // fretting hand slides along the neck
+    const fret = 0.12 + (solo ? 0.24 * (0.5 + 0.5 * Math.sin(gt * Math.PI / 2)) : 0.1) * (1 - bend) + bend * 0.32 + raise * 0.1;
+    const fp = toTorso(40 + fret * 108, -16 - fret * 88 - bend * 10);
+    const aF = ikLimb(-28, -236, fp[0], fp[1], 60, 58, 1);
+    setLimb(G.armF, aF[0], aF[1]);
+    // picking hand: steady strum → tremolo in the solo → windmill circles
+    const pickFreq = solo ? 8 : 2;
+    const pk = Math.sin(o.beat * Math.PI * pickFreq) * (play ? 1 : 0);
+    let sp = toTorso(2, -10 + pk * (solo ? 7 : 12));
+    if (wind > 0.01) { const th = gt * Math.PI * 2; const wc = [28 + Math.cos(th) * 95, -240 + Math.sin(th) * 95]; sp = [sp[0] + (wc[0] - sp[0]) * wind, sp[1] + (wc[1] - sp[1]) * wind]; }
+    const aB = ikLimb(28, -240, sp[0], sp[1], 54, 52, -1);
+    setLimb(G.armB, aB[0], aB[1]);
+    // head: bangs on the beat, thrown back on bends, pompadour leads
+    const hr = 4 * sinb(1) * play * (1 - solo) + bang * 16 * (nod - 0.5) - bend * 24 - raise * 12 + kneel * -10;
+    G.headWrap.setAttribute('transform', `translate(0,${f1(-298 + bang * 6 * nod)}) rotate(${f1(hr)})`);
+    G.lines.setAttribute('display', solo > 0.5 && (bend > 0.5 || raise > 0.5 || Math.sin(o.beat * Math.PI * 2) > 0.6) ? 'inline' : 'none');
+    G.face = { squeeze: solo > 0.4 && bend < 0.5 ? 1 : 0, mouth: bend > 0.5 ? 'o' : solo > 0.4 ? 'grit' : 'flat', lid: bend > 0.5 ? 0.25 : 0.45 };
+    if (M.soloSpot) { M.soloSpot.setAttribute('opacity', (solo * 0.9).toFixed(2)); M.soloSpot.setAttribute('cx', f1(1535 + slide)); }
     // turtle: holds the clock sign; can raise it, look at it, sigh
-    const T = M.turtle, raise = o.tRaise || 0, look = o.tLook || 0;
-    T.sign.setAttribute('transform', `translate(${f1(-8 - raise * 10)},${f1(-118 - raise * 90)})`);
+    const T = M.turtle, tRaise = o.tRaise || 0, look = o.tLook || 0;
+    T.sign.setAttribute('transform', `translate(${f1(-8 - tRaise * 10)},${f1(-118 - tRaise * 90)})`);
     T.headG.setAttribute('transform', `translate(-6,${f1(-200 + (o.tSigh || 0) * 10)}) rotate(${f1(look * 16 - (o.tSigh || 0) * 6)} 0 20)`);
     const minA = (o.clock || 0) * 360, hourA = 60 + (o.clock || 0) * 30;
     T.minH.setAttribute('transform', `rotate(${f1(minA)})`);
@@ -367,7 +414,7 @@
     face('piano', M.piano.head, { lid: 0.55 }, 0.3);
     face('bass', M.bass.head, { lid: 0.5, browR: o.bassBrow || 0 }, 1.7);
     face('drums', M.drums.head, { lid: 0.6 }, 2.9);
-    face('guitar', M.guitar.head, solo > 0.4 ? { lid: 0, squeeze: 1, mouth: 'grit' } : { lid: 0.45, mouth: 'flat' }, 2.2);
+    face('guitar', M.guitar.head, G.face, 2.2);
   }
 
   function poseStage(S, st) {
@@ -386,6 +433,7 @@
     const bg = buildBackground(world, defs);
     const lights = buildLights(world);
     const orch = buildBand(world);
+    orch.soloSpot = bg.soloSpot;
     const actors = el('g', { id: 'actors' }, world);
     const curtains = buildCurtains(world);
     return { world, bg, lights, orch, actors, curtains };

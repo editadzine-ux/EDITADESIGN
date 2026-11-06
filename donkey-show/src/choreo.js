@@ -398,7 +398,7 @@
         }
         // the solo pushes them aside (tiny shuffling steps), they come back for the bows
         const aside = smooth((t - g0) / 0.9) * (1 - smooth((t - (bow0 - 1.0)) / 0.9));
-        p.dx += (T ? -70 : -150) * aside;
+        p.dx += (T ? -120 : -215) * aside;
         mix(p, V.scramble(bt, k), Math.max(win(t, g0, g0 + 0.9, 0.1, 0.1), win(t, bow0 - 1.0, bow0 - 0.1, 0.1, 0.1)));
         // BOWS: the tall one bows deep, hand on heart; the short one bows late and shallow
         const bw = bow0 + (T ? 0 : 0.45);
@@ -470,7 +470,7 @@
         dry: win(t, mw1, mw1 + 0.18, 0.02, 0.12),
         finalHit: win(t, end, end + 0.35, 0.05, 0.2),
         cymbal: win(t, mw1, mw1 + 0.5, 0.02, 0.3) * Math.sin((t - mw1) * 34) + win(t, end + 0.05, end + 0.6, 0.02, 0.4) * Math.sin((t - end) * 30),
-        solo: win(t, g0, me, 0.4, 0.05), soloBeat: b,
+        solo: win(t, g0, me, 0.4, 0.05), soloBeat: b, gt: this.beat(t) - this.beat(g0), gRaise: win(t, end, 1e9, 0.15, 0.01),
         tLook, tRaise, clock, tSigh: win(t, enc - 0.8, enc + 0.6, 0.2, 0.3), tLid: 0.5 - 0.15 * tRaise, tBlink: ((t * 0.29) % 5.3) < 0.13,
         faces: this.monkeyFaces(t),
         pianoNod: 4 * win(t, end + 0.2, end + 0.7, 0.1, 0.2),

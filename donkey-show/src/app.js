@@ -4,7 +4,7 @@
   const DS = window.DS;
   const params = new URLSearchParams(location.search);
   const RENDER = params.has('render');
-  const STORE = 'donkey-show-timing-v3';
+  const STORE = 'donkey-show-timing-v4';
   const $ = (s) => document.querySelector(s);
 
   // ---------- data ----------
@@ -43,15 +43,61 @@
   const sub = $('#sub');
   const badge = $('#badge');
 
+  // ---------- camera: static framings, framings that track faces/hands, and animated moves ----------
   const SHOTS = {
     wide: { s: 0.9, cx: 960, cy: 560 },
+    xwide: { s: 0.8, cx: 960, cy: 560 },
+    curtain: { s: 1.35, cx: 960, cy: 520 },
     two: { s: 1.15, cx: 970, cy: 470 },
     dlg: { s: 1.4, cx: 975, cy: 400 },
     cuT: { s: 1.5, cx: 740, cy: 410 },
     cuS: { s: 1.95, cx: 1345, cy: 515 },
     cuBass: { s: 2.2, cx: 440, cy: 650 },
     cuGuit: { s: 2.1, cx: 1650, cy: 660 },
+    feet: { s: 1.6, cx: 965, cy: 770 },
+    turtle: { s: 2.7, cx: 1772, cy: 700 },
+    band: { s: 1.5, cx: 1500, cy: 700 },
   };
+  const D = { faceT: 2.2, faceS: 2.4, xfaceT: 3.3, xfaceS: 3.5, guitFace: 3.0, fret: 3.0, guit: 1.9 };
+  let marks = {};
+  const ctmPoint = (node, x, y) => { const m = node.getCTM(); return [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]; };
+  function measure(pT, pS) {
+    // called with the world transform reset, so CTMs are in world space
+    const hb = (Dk, p, rest) => {
+      const b = Dk.hg.getBBox(), c = ctmPoint(Dk.hg, b.x + b.width * 0.5, b.y + b.height * 0.55);
+      return [c[0] * 0.6 + (p.x + p.dx + p.face * 80) * 0.4, c[1] * 0.55 + rest * 0.45];
+    };
+    marks.faceT = hb(T, pT, 300); marks.faceS = hb(S, pS, 470);
+    const g = stage.orch.guitar;
+    marks.guitFace = ctmPoint(g.headWrap, 0, -10);
+    marks.fret = ctmPoint(g.armF.end, 0, 0);
+    marks.guit = ctmPoint(g.torso, 0, -150);
+  }
+  function framing(k) {
+    if (SHOTS[k]) return SHOTS[k];
+    const key = k.replace(/^x(face[TS])$/, '$1');
+    const m = marks[key] || [960, 540];
+    const sc = D[k] || 2.2;
+    // keep faces in the upper part of the frame so subtitles never cover a mouth
+    const lift = /face/.test(k) ? 150 / sc : 0;
+    return { s: sc, cx: m[0], cy: m[1] + lift - (k.startsWith('x') ? 0 : 20) };
+  }
+  const EASE = { io: (u) => u * u * (3 - 2 * u), out: (u) => 1 - Math.pow(1 - u, 3), in: (u) => u * u * u, lin: (u) => u };
+  function camera(t) {
+    const shots = data.shots;
+    let cur = shots[0];
+    for (const sh of shots) if (t >= sh.t) cur = sh;
+    let f = framing(cur.k);
+    if (cur.to) {
+      const u = (EASE[cur.e || 'io'])(Math.max(0, Math.min(1, (t - cur.t) / (cur.d || 1))));
+      const g = framing(cur.to);
+      f = { s: Math.exp(Math.log(f.s) + (Math.log(g.s) - Math.log(f.s)) * u), cx: f.cx + (g.cx - f.cx) * u, cy: f.cy + (g.cy - f.cy) * u };
+    }
+    let sc = f.s;
+    if (cur.pulse) sc *= 1 + 0.025 * Math.pow(Math.abs(Math.cos(Math.PI * choreo.beat(t))), 10);
+    return { s: sc, cx: f.cx, cy: f.cy, k: cur.to && t - cur.t < (cur.d || 1) ? 'move' : cur.to || cur.k };
+  }
+  DS.camera = camera;
 
   function earLag(id, t) {
     const a = choreo.pose(id, t), b = choreo.pose(id, t - 0.07), c = choreo.pose(id, t - 0.14);
@@ -70,8 +116,10 @@
     S.apply(pS, earLag('S', t));
     DS.poseStage(stage, choreo.stage(t));
     DS.poseOrchestra(stage.orch, choreo.orchestra(t));
-    const sh = SHOTS[choreo.shot(t).k] || SHOTS.wide;
-    stage.world.setAttribute('transform', `translate(960,540) scale(${sh.s}) translate(${-sh.cx},${-sh.cy})`);
+    stage.world.removeAttribute('transform');
+    measure(pT, pS);
+    const sh = camera(t);
+    stage.world.setAttribute('transform', `translate(960,540) scale(${sh.s.toFixed(4)}) translate(${(-sh.cx).toFixed(1)},${(-sh.cy).toFixed(1)})`);
     // subtitles: the current line, or keep the previous one briefly across tiny gaps
     let c = choreo.anyActive(t);
     if (!c) for (const q of data.cues) if (t > q.end && t < q.end + 0.35) c = q;
@@ -81,7 +129,7 @@
   DS.renderAt = renderAt;
   // QA: where are the ears / whole characters on screen right now?
   DS.frameCheck = () => {
-    const out = { shot: choreo.shot(lastT).k };
+    const out = { shot: camera(lastT).k };
     for (const [k, d] of [['T', T], ['S', S]]) {
       const ears = d.earG.map((e) => e.o.getBoundingClientRect());
       const body = d.root.getBoundingClientRect();
