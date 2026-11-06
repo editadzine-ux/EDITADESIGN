@@ -545,6 +545,7 @@
         t, beat: playing ? b : Math.floor(b), playing,
         bassBrow: win(t, C('v2b').start + 1.6, C('v2b').start + 3.6, 0.15, 0.3),
         dry: win(t, mw1, mw1 + 0.18, 0.02, 0.12),
+        rim: win(t, C('o5').end + 0.15, C('o5').end + 0.45, 0.04, 0.15),
         finalHit: win(t, end, end + 0.35, 0.05, 0.2),
         cymbal: win(t, mw1, mw1 + 0.5, 0.02, 0.3) * Math.sin((t - mw1) * 34) + win(t, end + 0.05, end + 0.6, 0.02, 0.4) * Math.sin((t - end) * 30),
         solo: win(t, g0, me, 0.4, 0.05), soloBeat: b, gt: this.beat(t) - this.beat(g0), gRaise: win(t, end, 1e9, 0.15, 0.01),
@@ -563,6 +564,10 @@
       const on = (a, z) => t >= a && t <= z;
       const me = this.data.musicEnd;
       if (on(m.open + 4.4, m.open + 5.6)) Object.assign(f.piano, { mouth: 'yawn', lid: 1 });
+      const o5 = C('o5').end;
+      if (on(o5 + 0.15, o5 + 1.3)) Object.assign(f.drums, { mouth: 'smirk', lookX: -0.6 });
+      if (on(this.E(36), this.E(44))) Object.assign(f.drums, { mouth: 'smile', lookX: -0.5 });
+      if (on(this.E(44), this.E(45.5))) Object.assign(f.drums, { mouth: 'o', lookX: 0 });
       if (on(C('v2b').start + 1.6, C('v2b').start + 3.6)) Object.assign(f.bass, { lookX: 0.6 });
       const rp = this.ripT();
       if (on(rp + 0.1, rp + 1.5)) { Object.assign(f.piano, { lookX: 1, lid: 0.2, mouth: 'o' }); Object.assign(f.bass, { lookX: 1, lid: 0.2, brow: 1 }); Object.assign(f.drums, { lookX: 1, lid: 0.2 }); }

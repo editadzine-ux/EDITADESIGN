@@ -470,6 +470,106 @@
     return g;
   }
 
+  // ---------------- cut-out band from the approved illustrations ----------------
+  // each figure: base image with holes for movable pieces + the pieces themselves (head, playing hands…)
+  const BAND = {
+    pianist: { x: 60, bottom: 852, s: 0.36, head: [[280, 0], [712, 0], [712, 262], [560, 300], [548, 338], [498, 338], [480, 300], [330, 282], [280, 240]], piv: [520, 322],
+      pieces: { h1: [[250, 430], [404, 430], [404, 479], [250, 479]], h2: [[262, 479], [414, 479], [414, 536], [262, 536]] }, mouth: [455, 262], skin: 'rgb(254,191,159)' },
+    bassist: { x: 346, bottom: 852, s: 0.393, head: [[55, 26], [362, 26], [366, 190], [356, 292], [300, 322], [258, 334], [200, 322], [150, 302], [58, 262]], piv: [255, 322],
+      pieces: { pluck: [[328, 468], [424, 468], [424, 548], [328, 548]] }, mouth: [262, 268], skin: 'rgb(254,203,171)', eye: [[232, 140], [330, 140], [330, 236], [232, 236]] },
+    drummer: { x: 792, bottom: 848, s: 0.348, head: [[212, 0], [602, 0], [602, 252], [474, 272], [454, 312], [392, 312], [370, 272], [212, 244]], piv: [422, 302],
+      pieces: { stickR: [[478, 236], [652, 236], [572, 452], [508, 474], [470, 420]], stickL: [[336, 400], [436, 400], [436, 524], [336, 524]] }, mouth: [425, 238], skin: 'rgb(254,203,168)' },
+    turtle: { x: 1716, bottom: 852, s: 0.246, head: [[28, 0], [392, 0], [392, 300], [282, 334], [168, 334], [28, 252]], piv: [232, 334],
+      pieces: { sign: [[0, 398], [292, 398], [292, 616], [0, 616]] }, mouth: [165, 238], skin: 'rgb(242,201,87)' },
+  };
+  function buildBandSprites(world, defs) {
+    const SP = DS.SPRITES || {};
+    if (!SP.band_pianist) return null;
+    const g = el('g', { class: 'bandSprites' }, world);
+    const out = {};
+    const P = (pts) => pts.map((q) => q.join(',')).join(' ');
+    for (const name of ['turtle', 'pianist', 'bassist', 'drummer']) {
+      const B = BAND[name], m = SP['band_' + name];
+      const root = el('g', { transform: `translate(${B.x},${B.bottom - m.h * B.s}) scale(${B.s})` }, g);
+      const href = `assets/sprites/band_${name}.png`;
+      // mask: everything except the movable pieces
+      const mk = el('mask', { id: `mk_${name}`, maskUnits: 'userSpaceOnUse', x: -50, y: -50, width: m.w + 100, height: m.h + 100 }, defs);
+      el('rect', { x: -50, y: -50, width: m.w + 100, height: m.h + 100, fill: '#fff' }, mk);
+      el('polygon', { points: P(B.head), fill: '#000' }, mk);
+      if (name === 'turtle') {
+        // something behind the sign for when it is raised: the dark vest
+        el('path', { d: 'M78,380 L318,380 L330,700 L180,712 L72,690 Z', fill: '#2c3447', stroke: INK, 'stroke-width': 5 }, root);
+        el('polygon', { points: P(B.pieces.sign), fill: '#000' }, mk);
+      }
+      el('image', { href, width: m.w, height: m.h, mask: `url(#mk_${name})` }, root);
+      const piece = (pts, id, extra) => {
+        const cp = el('clipPath', { id: `cp_${name}_${id}` }, defs);
+        el('polygon', { points: P(pts.map(([x, y], i) => [x, y])) }, cp);
+        const pg = el('g', {}, root);
+        el('image', { href, width: m.w, height: m.h, 'clip-path': `url(#cp_${name}_${id})` }, pg);
+        return pg;
+      };
+      const F = { root, B };
+      // pieces drawn under the head
+      F.pieces = {};
+      for (const k in B.pieces) F.pieces[k] = piece(B.pieces[k], k);
+      // head (slightly enlarged clip at the neck so small moves never open a gap)
+      const headPts = B.head.map(([x, y]) => [x, y >= B.piv[1] - 20 ? y + 10 : y]);
+      F.head = piece(headPts, 'head');
+      if (B.eye) F.eye = (() => { const pg = piece(B.eye, 'eye'); F.head.appendChild(pg); return pg; })();
+      // mouth overlay (patch of skin + drawn mouth) for small acting beats
+      F.mouthG = el('g', { transform: `translate(${B.mouth[0]},${B.mouth[1]})`, display: 'none' }, F.head);
+      el('ellipse', { rx: 34, ry: 18, fill: B.skin }, F.mouthG);
+      F.mouth = el('path', { fill: 'none', stroke: INK, 'stroke-width': 7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, F.mouthG);
+      if (name === 'turtle') {
+        // fresh clock hands drawn over the sign's printed ones
+        const c = el('g', { transform: 'translate(167,508)' }, F.pieces.sign);
+        el('circle', { r: 56, fill: '#fdf2dc' }, c);
+        for (let i = 0; i < 12; i++) { if (i % 3) continue; const a = i * Math.PI / 6; el('path', { d: `M${f1(Math.cos(a) * 46)},${f1(Math.sin(a) * 46)} L${f1(Math.cos(a) * 56)},${f1(Math.sin(a) * 56)}`, stroke: INK, 'stroke-width': 7, 'stroke-linecap': 'round' }, c); }
+        F.hourH = el('path', { d: 'M0,0 L0,-34', stroke: INK, 'stroke-width': 10, 'stroke-linecap': 'round' }, c);
+        F.minH = el('path', { d: 'M0,0 L0,-52', stroke: INK, 'stroke-width': 7, 'stroke-linecap': 'round' }, c);
+        el('circle', { r: 8, fill: INK }, c);
+      }
+      out[name] = F;
+    }
+    return { g, F: out };
+  }
+
+  function poseBandSprites(BS, M, o) {
+    if (!BS) return;
+    const F = BS.F, play = o.playing ? 1 : 0;
+    const MOUTH = { smile: 'M-22,-4 Q0,14 22,-4', smirk: 'M-20,4 Q4,8 22,-8', o: 'M-9,0 a9,11 0 1 0 18,0 a9,11 0 1 0 -18,0', yawn: 'M-15,-2 a15,20 0 1 0 30,0 a15,20 0 1 0 -30,0', flat: '' };
+    const faces = o.faces || {};
+    const headPose = (Fx, f, bob, tilt) => {
+      const B = Fx.B, look = f.lookX || 0, ly = f.lookY || 0;
+      Fx.head.setAttribute('transform', `translate(0,${f1(bob)}) rotate(${f1(tilt + look * 5 - ly * 3)} ${B.piv[0]} ${B.piv[1]})`);
+      const mo = f.mouth && f.mouth !== 'flat' ? f.mouth : null;
+      Fx.mouthG.setAttribute('display', mo ? 'inline' : 'none');
+      if (mo) { Fx.mouth.setAttribute('d', MOUTH[mo]); Fx.mouth.setAttribute('fill', mo === 'o' || mo === 'yawn' ? '#8f3a35' : 'none'); }
+    };
+    const beat = o.beat, pulse = (ph) => Math.pow(Math.abs(Math.cos((beat + ph) * Math.PI)), 6);
+    // pianist: hands alternate on the keys, head nods slightly
+    headPose(F.pianist, faces.piano || {}, (o.pianoNod || 0) * 2, 1.5 * Math.sin(beat * Math.PI) * play);
+    F.pianist.pieces.h1.setAttribute('transform', `translate(0,${f1(-5 * Math.max(0, Math.sin(beat * Math.PI * 2)) * play)})`);
+    F.pianist.pieces.h2.setAttribute('transform', `translate(0,${f1(-5 * Math.max(0, -Math.sin(beat * Math.PI * 2)) * play)})`);
+    // bassist: plucking hand, slow sway, raised 'eyebrow' (eye widens) during the over-dramatic verse
+    headPose(F.bassist, faces.bass || {}, (o.bassNod || 0) * 2, 1.2 * Math.sin(beat * Math.PI * 0.5) * play);
+    F.bassist.pieces.pluck.setAttribute('transform', `translate(${f1(-6 * pulse(0) * play)},${f1(4 * pulse(0) * play)})`);
+    const br = o.bassBrow || 0;
+    if (F.bassist.eye) F.bassist.eye.setAttribute('transform', `translate(0,236) scale(1,${(1 + 0.32 * br).toFixed(3)}) translate(0,-236)`);
+    // drummer: stick taps on the beat; accent hits; bob when she secretly enjoys it
+    const acc = Math.max(o.dry || 0, o.finalHit || 0, o.tss || 0, o.rim || 0);
+    headPose(F.drummer, faces.drums || {}, (o.drumBob || 0) * 6 * Math.abs(Math.sin(beat * Math.PI)), (o.drumBob || 0) * 4 * Math.sin(beat * Math.PI));
+    F.drummer.pieces.stickR.setAttribute('transform', `rotate(${f1((8 * pulse(0.5) * play + 16 * acc))} 520 430)`);
+    F.drummer.pieces.stickL.setAttribute('transform', `rotate(${f1(-10 * pulse(0) * play)} 380 470)`);
+    // turtle: looks at the clock, raises the sign, circles it ('keep going'), sighs
+    const T = F.turtle, raise = o.tRaise || 0, look = o.tLook || 0, go = o.tGo || 0, ga = (o.t || 0) * 9;
+    headPose(T, {}, (o.tSigh || 0) * 10, look * 10 - (o.tSigh || 0) * 6);
+    T.pieces.sign.setAttribute('transform', `translate(${f1(go * 60 * Math.cos(ga))},${f1(-raise * 260 + go * 60 * Math.sin(ga) + (o.tPull || 0) * 120)})`);
+    T.minH.setAttribute('transform', `rotate(${f1((o.clock || 0) * 360)})`);
+    T.hourH.setAttribute('transform', `rotate(${f1(60 + (o.clock || 0) * 30)})`);
+  }
+
   DS.buildStage = function (svg) {
     const defs = el('defs', {}, svg);
     const world = el('g', { id: 'world' }, svg);
@@ -478,10 +578,29 @@
     const orch = buildBand(world);
     orch.soloSpot = bg.soloSpot;
     const actors = el('g', { id: 'actors' }, world);
+    const bandSprites = buildBandSprites(world, defs);
+    if (bandSprites) {
+      // the approved empty stage plate replaces the drawn backdrop; drawn band members are hidden
+      const plate = el('image', { href: 'assets/sprites/stage.jpg', x: 0, y: 0, width: 1920, height: 1080, preserveAspectRatio: 'none' });
+      bg.g.insertBefore(plate, bg.g.children[1]);
+      for (const ch of Array.from(bg.g.children).slice(2)) ch.setAttribute('display', 'none');
+      lights.g.setAttribute('display', 'none');
+      for (const k of ['piano', 'bass', 'drums', 'turtle']) orch[k].r.setAttribute('display', 'none');
+      world.insertBefore(bandSprites.g, orch.guitar.r.parentNode);
+      // the turtle's cord-pulling arm now hangs off the cut-out turtle
+      const armHost = el('g', { transform: 'translate(1775,913)' }, bandSprites.g);
+      armHost.appendChild(orch.turtle.tArm.g);
+      // guitarist: the head from the solo illustration replaces the drawn one
+      const G = orch.guitar, m = DS.SPRITES.G_head;
+      for (const ch of Array.from(G.head.g.children)) ch.setAttribute('display', 'none');
+      el('image', { href: 'assets/sprites/G_head.png', width: m.w, height: m.h, x: -m.ax, y: -m.ay, transform: 'translate(0,62) scale(0.4)' }, G.head.g);
+      orch.bandSprites = bandSprites;
+    }
     const curtains = buildCurtains(world);
+    if (bandSprites) curtains.g.children[0].setAttribute('display', 'none'), curtains.g.children[1].setAttribute('display', 'none');
     buildAudience(world, defs);
     return { world, bg, lights, orch, actors, curtains };
   };
-  DS.poseOrchestra = poseBand;
+  DS.poseOrchestra = (M, o) => { poseBand(M, o); poseBandSprites(M.bandSprites, M, o); };
   DS.poseStage = poseStage;
 })();

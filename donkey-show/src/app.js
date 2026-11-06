@@ -4,7 +4,7 @@
   const DS = window.DS;
   const params = new URLSearchParams(location.search);
   const RENDER = params.has('render');
-  const STORE = 'donkey-show-timing-v5';
+  const STORE = 'donkey-show-timing-v6';
   const $ = (s) => document.querySelector(s);
 
   // ---------- data ----------
@@ -46,8 +46,8 @@
 
   // ---------- camera: static framings, framings that track faces/hands, and animated moves ----------
   const SHOTS = {
-    wide: { s: 0.9, cx: 960, cy: 560 },
-    xwide: { s: 0.8, cx: 960, cy: 560 },
+    wide: { s: 1.0, cx: 960, cy: 540 },
+    xwide: { s: 1.0, cx: 960, cy: 540 },
     curtain: { s: 1.35, cx: 960, cy: 520 },
     two: { s: 1.15, cx: 970, cy: 470 },
     dlg: { s: 1.4, cx: 975, cy: 400 },
@@ -59,6 +59,7 @@
     turtle: { s: 2.7, cx: 1772, cy: 700 },
     band: { s: 1.5, cx: 1500, cy: 700 },
     audience: { s: 1.0, cx: 960, cy: 2940 },
+    cuDrum: { s: 2.5, cx: 946, cy: 680 },
   };
   const D = { rip: 2.5, faceT: 2.2, faceS: 2.4, xfaceT: 3.3, xfaceS: 3.5, guitFace: 3.0, fret: 3.0, guit: 1.9 };
   let marks = {};
@@ -133,11 +134,12 @@
     credit.style.transform = `translate(-50%, -50%) scale(${(0.96 + 0.04 * co).toFixed(3)})`;
   }
   DS.renderAt = renderAt;
+  DS.actors = { T, S, stage };
   // QA: where are the ears / whole characters on screen right now?
   DS.frameCheck = () => {
     const out = { shot: camera(lastT).k };
     for (const [k, d] of [['T', T], ['S', S]]) {
-      const ears = d.earG.map((e) => e.o.getBoundingClientRect());
+      const ears = d.sprite && d.sprite.cur ? [d.sprite.imgs[d.sprite.cur].getBoundingClientRect()] : d.earG.map((e) => e.o.getBoundingClientRect());
       const body = d.root.getBoundingClientRect();
       out[k] = { earTop: Math.min(...ears.map((r) => r.top)), earL: Math.min(...ears.map((r) => r.left)), earR: Math.max(...ears.map((r) => r.right)),
         top: body.top, left: body.left, right: body.right, bottom: body.bottom };
@@ -151,7 +153,8 @@
     useBundledEnvelope();
     if (params.has('mock')) { mockMouths = true; badge.hidden = false; }
     renderAt(parseFloat(params.get('t') || '0'));
-    window.__ready = document.fonts.ready.then(() => true);
+    const imgs = Array.from(document.querySelectorAll('image')).map((im) => new Promise((res) => { const i = new Image(); i.onload = i.onerror = res; i.src = im.getAttribute('href'); }));
+    window.__ready = Promise.all([document.fonts.ready, ...imgs]).then(() => new Promise((r) => setTimeout(() => r(true), 300)));
     return;
   }
 

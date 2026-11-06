@@ -79,7 +79,7 @@
     T: {
       name: 'tall', skin: '#f2c3ad', earOut: '#f3b6a3', hand: '#f5cbb7', muzzle: '#f9dccf', earIn: '#f8d2c5', mane: '#9b4f2b',
       suit: '#1fa39b', suitShade: '#168a83', shirt: '#fffdf6', tie: '#151515', belt: '#151515', buckle: '#e9b54a', sock: '#fffdf6', buttons: 2,
-      hipY: -300, hipHalf: 26, thigh: 152, shin: 146, footSpread: 40, legW: 44, shinW: 38, pantsEnd: 0.7, sockW: 15,
+      hipY: -300, hipHalf: 22, thigh: 152, shin: 146, footSpread: 34, legW: 40, shinW: 34, pantsEnd: 0.72, sockW: 15,
       torsoH: 178, shoulderHalf: 54, waistHalf: 62, belly: 4, hem: 22,
       upper: 88, fore: 84, armW: 32, foreW: 28,
       neckLen: 96, neckW: 30, neckAng: 14,
@@ -90,8 +90,8 @@
     S: {
       name: 'short', skin: '#f2a172', earOut: '#f2a172', hand: '#f7c9ae', muzzle: '#f8d4c2', earIn: '#f6b79c', mane: '#8a4524',
       suit: '#f3b51e', suitShade: '#d99c12', shirt: '#fffdf6', tie: '#a3182a', belt: '#6e4524', buckle: '#e9b54a', sock: '#fffdf6', buttons: 1,
-      hipY: -196, hipHalf: 32, thigh: 98, shin: 90, footSpread: 44, legW: 62, shinW: 50, pantsEnd: 0.78, sockW: 18,
-      torsoH: 152, shoulderHalf: 52, waistHalf: 80, belly: 26, hem: 26,
+      hipY: -196, hipHalf: 34, thigh: 98, shin: 90, footSpread: 42, legW: 96, shinW: 44, pantsEnd: 0.82, sockW: 18,
+      torsoH: 150, shoulderHalf: 50, waistHalf: 98, belly: 58, hem: 34,
       upper: 74, fore: 68, armW: 34, foreW: 30,
       neckLen: 40, neckW: 40, neckAng: 18,
       head: { cr: 48, cx: 0, cy: -46, mx: 96, my: -34, mrx: 52, mry: 40, mrot: -8, eye1: [34, -70], eye2: [60, -74], er: 12, teeth: 'buck', earL: 185, earW: 42, sc: 1.3 },
@@ -116,6 +116,7 @@
       this.buildTorso();
       this.buildNeck();
       this.buildHead();
+      this.buildSpriteHead();
       this.free = this.buildArm(this.layers.armBack, 'free');
       this.mic = this.buildArm(this.layers.armFront, 'mic');
       if (s.tail) this.buildTail();
@@ -283,6 +284,46 @@
       el('ellipse', { cx: 0, cy: 2, rx: 4, ry: 9, fill: '#8a7f73', stroke: INK, 'stroke-width': 2.5 }, this.moth);
     }
 
+    // head + neck cut out of the approved expression sheets (replacement animation)
+    buildSpriteHead() {
+      const SP = DS.SPRITES || {};
+      const keys = Object.keys(SP).filter((k) => k.startsWith(this.id + '_'));
+      if (!keys.length) { this.sprite = null; return; }
+      const g = el('g', { class: 'spriteHead' }, this.layers.neck);
+      this.sprite = { g, imgs: {}, cur: null, overlay: el('g', {}, g) };
+      for (const k of keys) {
+        const m = SP[k];
+        const im = el('image', { href: `assets/sprites/${k}.png`, width: m.w, height: m.h, x: -m.ax, y: -m.ay, display: 'none', preserveAspectRatio: 'none' }, g);
+        this.sprite.imgs[k.slice(2)] = im;
+      }
+      g.appendChild(this.sprite.overlay);
+      const ov = this.sprite.overlay;
+      const drop = 'M0,-16 C6,-6 11,0 11,6 C11,13 6,17 0,17 C-6,17 -11,13 -11,6 C-11,0 -6,-6 0,-16 Z';
+      this.sprite.sweat = [el('path', { d: drop, fill: '#a9d8ef', stroke: INK, 'stroke-width': 3, display: 'none' }, ov), el('path', { d: drop, fill: '#a9d8ef', stroke: INK, 'stroke-width': 3, display: 'none' }, ov)];
+      this.sprite.bubble = el('circle', { r: 10, fill: 'rgba(235,245,255,0.55)', stroke: INK, 'stroke-width': 3, display: 'none' }, ov);
+      this.sprite.marks = el('path', { d: 'M-40,-20 L-62,-46 M-14,-34 L-20,-66 M14,-30 L30,-60', fill: 'none', stroke: '#fff6e0', 'stroke-width': 5, 'stroke-linecap': 'round', display: 'none' }, ov);
+      this.hg.setAttribute('display', 'none');
+      this.neck.setAttribute('display', 'none');
+    }
+
+    pickExpr(p) {
+      const open = p.jaw > 0.22;
+      const nervous = (p.sweat || 0) >= 1 || (p.bulge || 1) > 1.12 || (p.frown || 0) > 0.35 || (p.pupil || 1) < 0.55 || (p.tear || 0) > 0.5;
+      if (this.id === 'T') {
+        if (open) return nervous && !(p.grin > 0.5) ? 'worried' : 'sing';
+        if ((p.blush || 0) > 0.5 || (p.grin > 0.5 && (p.sweat || 0) >= 1)) return 'embarrassed';
+        if (p.grin > 0.5 || p.wink) return 'sly';
+        if ((p.bulge || 1) > 1.1 || p.eyeOpen > 1.25 || p.mouthO > 0.5 || (p.cross || 0) > 0.4) return 'surprised';
+        if ((p.frown || 0) > 0.35 || (p.tear || 0) > 0.5) return 'worried';
+        return 'smug';
+      }
+      if (open) return nervous || (p.bulge || 1) > 1.1 ? 'scared' : 'sing';
+      if (p.grin > 0.5 && ((p.sweat || 0) >= 1 || (p.blush || 0) > 0.5)) return 'smuggrin';
+      if (p.grin > 0.5) return 'sly';
+      if ((p.bulge || 1) > 1.1 || p.eyeOpen > 1.25 || p.mouthO > 0.5 || (p.cross || 0) > 0.4) return 'surprised';
+      return 'grumpy';
+    }
+
     buildArm(layer, kind) {
       const s = this.s;
       const g = el('g', {}, layer);
@@ -375,6 +416,34 @@
       this.hg.setAttribute('transform', `translate(${f1(nt[0])},${f1(nt[1])}) rotate(${f1(hr)}) scale(${hs})`);
       this.headWorld = (x, y) => { const q = rot(x * hs, y * hs, hr); return [q[0] + nt[0], q[1] + nt[1]]; };
       this.applyFace(p, ear);
+      if (this.sprite) {
+        const SK = this.id === 'T' ? { k: 0.78, drop: 12, mdx: 75, mdy: -250 } : { k: 0.76, drop: 12, mdx: 95, mdy: -150 };
+        const name = this.pickExpr(p);
+        if (name !== this.sprite.cur) {
+          if (this.sprite.cur) this.sprite.imgs[this.sprite.cur].setAttribute('display', 'none');
+          this.sprite.imgs[name].setAttribute('display', 'inline');
+          this.sprite.cur = name;
+        }
+        const nb2 = toWorld(...this.torsoPts.neck);
+        const hrs = (p.headRot + lean * 0.4) * 0.8 + (p.neckRot || 0);
+        const sk = SK.k * (1 + 0.02 * (p.jaw || 0));
+        this.sprite.g.setAttribute('transform', `translate(${f1(nb2[0] + p.headDx * 0.6)},${f1(nb2[1] + SK.drop + p.headDy * 0.6)}) rotate(${f1(hrs)}) scale(${sk.toFixed(3)})`);
+        this.headWorld = (x, y) => { const q = rot(SK.mdx * sk, SK.mdy * sk, hrs); return [q[0] + nb2[0], q[1] + nb2[1] + SK.drop]; };
+        this.spriteMouth = this.headWorld(0, 0);
+        // overlays: sweat drops, snore bubble, motion marks
+        const sw = p.sweat || 0, ph = (p.t * 0.9) % 1, ph2 = (p.t * 0.9 + 0.5) % 1;
+        const sx = this.id === 'T' ? 60 : 30, sy = this.id === 'T' ? -300 : -250;
+        this.sprite.sweat[0].setAttribute('display', sw > 0.5 ? 'inline' : 'none');
+        this.sprite.sweat[0].setAttribute('transform', `translate(${sx - 60},${f1(sy + ph * 40)}) scale(${(1.4 + ph * 0.4).toFixed(2)})`);
+        this.sprite.sweat[1].setAttribute('display', sw > 1.5 ? 'inline' : 'none');
+        this.sprite.sweat[1].setAttribute('transform', `translate(${sx + 40},${f1(sy - 40 + ph2 * 36)}) scale(${(1.2 + ph2 * 0.4).toFixed(2)})`);
+        const bub = p.bubble || 0;
+        this.sprite.bubble.setAttribute('display', bub > 0.05 ? 'inline' : 'none');
+        this.sprite.bubble.setAttribute('r', f1(10 + 50 * bub));
+        this.sprite.bubble.setAttribute('cx', f1((this.id === 'T' ? 120 : 150) + 30 * bub)); this.sprite.bubble.setAttribute('cy', f1(this.id === 'T' ? -300 : -180));
+        this.sprite.marks.setAttribute('display', (p.arcE || 0) > 0.3 ? 'inline' : 'none');
+        this.sprite.marks.setAttribute('transform', `translate(${this.id === 'T' ? 110 : 120},${this.id === 'T' ? -380 : -300}) scale(1.6)`);
+      }
       if ((p.arcE || 0) > 0.3) {
         const a = this.headWorld(-70, -150), b = this.headWorld(60, -175);
         md += arc(a[0], a[1], -1, 2, 14) + arc(b[0], b[1], 1, 2, 14);
@@ -391,12 +460,13 @@
         this.tuft.setAttribute('d', `M${f1(ex - 8)},${f1(ey - 12)} L${f1(ex - 26)},${f1(ey + 20)} L${f1(ex - 10)},${f1(ey + 10)} L${f1(ex - 6)},${f1(ey + 32)} L${f1(ex + 4)},${f1(ey + 12)} L${f1(ex + 18)},${f1(ey + 26)} L${f1(ex + 8)},${f1(ey - 6)} Z`);
       }
       // mouth position in body space (used for the mic hand)
-      const mouthW = this.headWorld(h.mx - h.mrx * 0.15, h.my + h.mry * 1.25);
+      const mouthW = this.sprite ? this.spriteMouth : this.headWorld(h.mx - h.mrx * 0.15, h.my + h.mry * 1.25);
       // ---- mic arm (front)
       const chest = [shF[0] + 22, shF[1] + 118];
-      const micAng = -38 + (p.micTilt || 0); // mic points up-left toward the muzzle
+      const micAng = (this.sprite ? -18 : -38) + (p.micTilt || 0); // mic points up toward the muzzle
       const micDir = [Math.cos((micAng - 90) * D2R), Math.sin((micAng - 90) * D2R)];
-      const headTarget = [mouthW[0] + 26 - micDir[0] * 74 + (p.micDx || 0), mouthW[1] + 6 - micDir[1] * 74 + (p.micDy || 0)];
+      const mOff = this.sprite ? [this.id === 'T' ? 0 : -4, this.id === 'T' ? 112 : 70] : [26, 6];
+      const headTarget = [mouthW[0] + mOff[0] - micDir[0] * 74 + (p.micDx || 0), mouthW[1] + mOff[1] - micDir[1] * 74 + (p.micDy || 0)];
       const mt = clamp(p.micT, 0, 1);
       const handM = [chest[0] + (headTarget[0] - chest[0]) * mt, chest[1] + (headTarget[1] - chest[1]) * mt];
       // mic offered to the audience: arm out, mic pointing forward
