@@ -23,7 +23,8 @@ DS.DEFAULT_DATA = {
    "start": 9.55,
    "end": 13.2,
    "text": "אֲנִי וְאַתָּה נִמְכֹּר אֲוִיר לְכֻלָּם,",
-   "syll": 8
+   "syll": 8,
+   "oEnd": false
   },
   {
    "id": "v1b",
@@ -32,7 +33,8 @@ DS.DEFAULT_DATA = {
    "start": 13.79,
    "end": 17.9,
    "text": "אֲנִי וְאַתָּה, בְּמִנּוּי מֻשְׁלָם.",
-   "syll": 7
+   "syll": 7,
+   "oEnd": false
   },
   {
    "id": "v1c",
@@ -41,7 +43,8 @@ DS.DEFAULT_DATA = {
    "start": 17.95,
    "end": 19.44,
    "text": "וְאִם יִשְׁאֲלוּ מַה קַיָּם —",
-   "syll": 6
+   "syll": 6,
+   "oEnd": false
   },
   {
    "id": "v1d",
@@ -50,7 +53,8 @@ DS.DEFAULT_DATA = {
    "start": 20.0,
    "end": 21.42,
    "text": "נַגִּיד: זֶה שָׁם.",
-   "syll": 4
+   "syll": 4,
+   "oEnd": false
   },
   {
    "id": "v1e",
@@ -59,7 +63,8 @@ DS.DEFAULT_DATA = {
    "start": 22.19,
    "end": 25.54,
    "text": "אֲנִי וְאַתָּה נְשַׁגֵּעַ אֶת הָעוֹלָם.",
-   "syll": 10
+   "syll": 10,
+   "oEnd": false
   },
   {
    "id": "s1a",
@@ -68,7 +73,8 @@ DS.DEFAULT_DATA = {
    "start": 26.7,
    "end": 27.68,
    "text": "קִבַּלְנוּ מִילְיוֹן!",
-   "syll": 5
+   "syll": 5,
+   "oEnd": true
   },
   {
    "id": "s1b",
@@ -77,7 +83,8 @@ DS.DEFAULT_DATA = {
    "start": 28.47,
    "end": 29.53,
    "text": "הַכֶּסֶף נִכְנַס?",
-   "syll": 5
+   "syll": 5,
+   "oEnd": false
   },
   {
    "id": "s1c",
@@ -86,7 +93,8 @@ DS.DEFAULT_DATA = {
    "start": 30.01,
    "end": 31.63,
    "text": "לֹא, אֲבָל יֵשׁ רֵאָיוֹן.",
-   "syll": 6
+   "syll": 6,
+   "oEnd": true
   },
   {
    "id": "s1d",
@@ -95,7 +103,8 @@ DS.DEFAULT_DATA = {
    "start": 32.18,
    "end": 33.73,
    "text": "אָז מִי מְשַׁלֵּם עַל הַמָּזוֹן?",
-   "syll": 8
+   "syll": 8,
+   "oEnd": true
   },
   {
    "id": "s1e",
@@ -104,7 +113,8 @@ DS.DEFAULT_DATA = {
    "start": 34.58,
    "end": 37.0,
    "text": "אִמָּא. הִיא גֵּאָה בִּי הָמוֹן.",
-   "syll": 8
+   "syll": 8,
+   "oEnd": true
   },
   {
    "id": "v2a",
@@ -113,7 +123,8 @@ DS.DEFAULT_DATA = {
    "start": 37.96,
    "end": 41.57,
    "text": "אֲנִי וְאַתָּה, כְּבָר כָּתְבוּ בָּעִתּוֹן,",
-   "syll": 9
+   "syll": 9,
+   "oEnd": true
   },
   {
    "id": "v2b",
@@ -122,7 +133,8 @@ DS.DEFAULT_DATA = {
    "start": 42.17,
    "end": 46.26,
    "text": "אֲנִי וְאַתָּה — שְׁנֵי חֲמוֹרִים עִם חָזוֹן.",
-   "syll": 9
+   "syll": 9,
+   "oEnd": true
   },
   {
    "id": "v2c",
@@ -131,7 +143,8 @@ DS.DEFAULT_DATA = {
    "start": 46.3,
    "end": 47.89,
    "text": "שָׁאֲלוּ: וּמַה עִם הַהוֹן?",
-   "syll": 7
+   "syll": 7,
+   "oEnd": true
   },
   {
    "id": "v2d",
@@ -140,7 +153,8 @@ DS.DEFAULT_DATA = {
    "start": 47.92,
    "end": 50.0,
    "text": "הָלַךְ עַל הַסִּרְטוֹן.",
-   "syll": 6
+   "syll": 6,
+   "oEnd": true
   },
   {
    "id": "v2e",
@@ -149,7 +163,8 @@ DS.DEFAULT_DATA = {
    "start": 50.58,
    "end": 55.65,
    "text": "אֲנִי וְאַתָּה מְגַיְּסִים עוֹד מִילְיוֹן.",
-   "syll": 8
+   "syll": 8,
+   "oEnd": true
   },
   {
    "id": "s2a",
@@ -158,7 +173,8 @@ DS.DEFAULT_DATA = {
    "start": 56.01,
    "end": 58.62,
    "text": "הַמַּשְׁקִיעַ פֹּה. תּוֹצִיא אֶת הַקַּשׁ מֵהַפֶּה.",
-   "syll": 13
+   "syll": 13,
+   "oEnd": false
   },
   {
    "id": "s2b",
@@ -167,7 +183,8 @@ DS.DEFAULT_DATA = {
    "start": 59.11,
    "end": 61.54,
    "text": "לָמָּה? זֶה דַּוְקָא נִרְאֶה דֵּי יָפֶה.",
-   "syll": 10
+   "syll": 10,
+   "oEnd": false
   },
   {
    "id": "s2c",
@@ -176,7 +193,8 @@ DS.DEFAULT_DATA = {
    "start": 62.55,
    "end": 64.03,
    "text": "עוֹד לֹא קִבַּלְנוּ הַשְׁקָעָה —",
-   "syll": 8
+   "syll": 8,
+   "oEnd": false
   },
   {
    "id": "s2d",
@@ -185,7 +203,8 @@ DS.DEFAULT_DATA = {
    "start": 64.55,
    "end": 66.4,
    "text": "כְּבָר רוֹאִים עָלֶיךָ הוֹצָאָה.",
-   "syll": 9
+   "syll": 9,
+   "oEnd": false
   },
   {
    "id": "v3a",
@@ -194,7 +213,8 @@ DS.DEFAULT_DATA = {
    "start": 66.6,
    "end": 69.7,
    "text": "אֲנִי וְאַתָּה מוֹכְרִים עוֹד מְנָיוֹת,",
-   "syll": 8
+   "syll": 8,
+   "oEnd": true
   },
   {
    "id": "v3b",
@@ -203,7 +223,8 @@ DS.DEFAULT_DATA = {
    "start": 70.56,
    "end": 74.7,
    "text": "אֲנִי וְאַתָּה, מְסֻדָּרִים לְדוֹרוֹת.",
-   "syll": 8
+   "syll": 8,
+   "oEnd": true
   },
   {
    "id": "v3c",
@@ -212,7 +233,8 @@ DS.DEFAULT_DATA = {
    "start": 74.75,
    "end": 76.24,
    "text": "שָׁאֲלוּ: וּמַה עִם הַהַכְנָסוֹת?",
-   "syll": 9
+   "syll": 9,
+   "oEnd": true
   },
   {
    "id": "v3d",
@@ -221,7 +243,8 @@ DS.DEFAULT_DATA = {
    "start": 76.57,
    "end": 78.4,
    "text": "תִּרְאוּ מַצָּגוֹת.",
-   "syll": 5
+   "syll": 5,
+   "oEnd": true
   },
   {
    "id": "v3e",
@@ -230,7 +253,8 @@ DS.DEFAULT_DATA = {
    "start": 78.94,
    "end": 85.03,
    "text": "אֲנִי וְאַתָּה כְּבָר פּוֹתְחִים עוֹד חֲבָרוֹת.",
-   "syll": 9
+   "syll": 9,
+   "oEnd": true
   },
   {
    "id": "o1",
@@ -239,7 +263,8 @@ DS.DEFAULT_DATA = {
    "start": 86.08,
    "end": 89.43,
    "text": "מָכַרְנוּ בְּמִילְיוֹן! נִגְמְרוּ הַדְּאָגוֹת!",
-   "syll": 10
+   "syll": 10,
+   "oEnd": true
   },
   {
    "id": "o2",
@@ -248,7 +273,8 @@ DS.DEFAULT_DATA = {
    "start": 90.0,
    "end": 91.34,
    "text": "הוּא שִׁלֵּם בִּמְזֻמָּן?",
-   "syll": 6
+   "syll": 6,
+   "oEnd": false
   },
   {
    "id": "o3",
@@ -257,7 +283,8 @@ DS.DEFAULT_DATA = {
    "start": 91.85,
    "end": 93.33,
    "text": "יוֹתֵר טוֹב. בִּמְנָיוֹת.",
-   "syll": 6
+   "syll": 6,
+   "oEnd": true
   },
   {
    "id": "o4",
@@ -266,7 +293,8 @@ DS.DEFAULT_DATA = {
    "start": 93.85,
    "end": 95.63,
    "text": "וּמַה הַחֶבְרָה שֶׁלּוֹ מוֹכֶרֶת?",
-   "syll": 10
+   "syll": 10,
+   "oEnd": false
   },
   {
    "id": "o5",
@@ -275,7 +303,8 @@ DS.DEFAULT_DATA = {
    "start": 96.0,
    "end": 98.23,
    "text": "גַּם אֲוִיר. בַּאֲרִיזָה אַחֶרֶת.",
-   "syll": 8
+   "syll": 8,
+   "oEnd": false
   },
   {
    "id": "o6",
@@ -284,7 +313,8 @@ DS.DEFAULT_DATA = {
    "start": 99.65,
    "end": 101.23,
    "text": "אָז מִי פֹּה הַחֲמוֹר?",
-   "syll": 5
+   "syll": 5,
+   "oEnd": true
   },
   {
    "id": "o7",
@@ -293,7 +323,8 @@ DS.DEFAULT_DATA = {
    "start": 101.86,
    "end": 103.5,
    "text": "תְּחַיֵּךְ. אֲנַחְנוּ בְּשִׁדּוּר.",
-   "syll": 6
+   "syll": 6,
+   "oEnd": true
   }
  ],
  "shots": [

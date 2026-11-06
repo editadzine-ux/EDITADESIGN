@@ -33,7 +33,7 @@
       eyeOpen: T ? 1 : 0.62, lookX: 0, lookY: 0, brow: 0, browL: 0, browR: 0, browTilt: 0, lidTilt: 0,
       smile: T ? 0.45 : 0.05, frown: 0, jaw: 0, mouthO: 0, grin: 0, eyeHappy: 0, earDroop: 0,
       pupil: 1, bulge: 1, cross: 0, wink: 0, blush: 0, sweat: 0, tear: 0, tongueOut: 0, arcF: 0, arcE: 0,
-      straw: 0, strawHand: 0, crouch: 0, pockets: 0, moth: 0, kneeFlipB: 0, kneeFlipF: 0, bubble: 0, rip: 0, micOut: 0,
+      straw: 0, strawHand: 0, crouch: 0, pockets: 0, moth: 0, mouthState: null, blinkPh: null, kneeFlipB: 0, kneeFlipF: 0, bubble: 0, rip: 0, micOut: 0,
     };
   }
 
@@ -146,19 +146,31 @@
 
     mouth(who, t) {
       const c = this.active(who, t);
-      if (!c) return { jaw: 0, o: 0 };
-      const local = (t - c.start) / Math.max(0.2, c.end - c.start);
-      const gate = Math.min(smooth((t - c.start) / 0.06), smooth((c.end - t) / 0.08));
-      const env = DS.envelope ? DS.envelope(t) : null;
-      const scale = c.kind === 'speak' ? 0.75 : 1.05;
-      if (env != null) {
-        const v = Math.pow(clamp(env, 0, 1), 0.7);
-        return { jaw: v * scale * gate, o: c.kind === 'sing' && local > 0.82 ? 0.5 : 0 };
-      }
-      const n = Math.max(3, c.syll || 6), long = c.kind === 'sing' ? 0.22 : 0.05;
-      if (local > 1 - long) return { jaw: 0.95 * gate, o: 0.6 };
-      const s = (local / (1 - long)) * n, v = Math.pow(sinp(frac(s)), 0.8);
-      return { jaw: (0.35 + 0.55 * hash(Math.floor(s) + c.start)) * v * scale * gate, o: hash(Math.floor(s) * 3.1) > 0.75 ? 0.6 : 0 };
+      if (!c) return { jaw: 0, o: 0, state: null };
+      const tq = Math.floor(t * 15) / 15;                    // mouth drawings change on twos (15 per second)
+      const env = (x) => (DS.envelope ? DS.envelope(x) : null);
+      const E = (x) => { const a = env(x - 0.033), b = env(x), d = env(x + 0.033); return a == null ? null : (a + 2 * b + d) / 4; };
+      const v = E(tq);
+      const inside = tq >= c.start - 0.02 && tq <= c.end + 0.04;
+      if (v == null || !inside) return { jaw: 0, o: 0, state: inside ? 'closed' : null };
+      // articulation: compare with the local peak (±0.22 s) so loud passages still open and close per syllable
+      let pk = 0.05;
+      for (let dt = -0.22; dt <= 0.22; dt += 0.033) pk = Math.max(pk, env(tq + dt) || 0);
+      const prev = E(tq - 1 / 15);
+      const rel = v / pk, level = v < 0.12 ? 0 : rel < 0.42 ? 0.1 : rel < 0.86 ? 0.4 : 0.9;
+      const rising = v >= prev;
+      // vowels: if the line ends on o/u (…וֹן, …וֹת, …וֹר, …וּר) the last stretch is sung on an O
+      const local = (tq - c.start) / Math.max(0.3, c.end - c.start);
+      const oEnd = c.oEnd && local > 0.72;
+      let state;
+      if (level < 0.2) state = (E(tq - 0.15) > 0.3) ? 'closing' : 'closed';
+      else if (level < 0.52) state = rising ? 'half' : 'halfdown';
+      else state = 'wide';
+      if (oEnd && level >= 0.3) state = 'o';
+      const jaw = level * (c.kind === 'speak' ? 0.8 : 1.0);
+      // the eyes-shut 'big note' drawing only on held notes at the end of a sung line
+      const held = c.kind === 'sing' && local > 0.66 && state === 'wide' && E(tq - 0.3) > 0.45 && v > 0.45;
+      return { jaw, o: oEnd ? 1 : 0, state, held };
     }
 
     pose(id, t) {
@@ -176,6 +188,9 @@
       const enc = m.instr ? m.instr[0][0] : 1e9, encEnd = m.instr ? m.instr[0][1] : 1e9;
       const eb = (n) => this.tAtBeat(Math.round(this.beat(enc)) + n); // encore time at beat n
 
+      // the listener keeps the mouth shut and looks at whoever is talking
+      { const oc = this.active(T ? 'S' : 'T', t), mine = this.active(id, t);
+        if (oc && !mine && oc.who !== 'both') mix(p, { lookX: 1 }, win(t, oc.start + 0.15, oc.end + 0.2, 0.12, 0.2)); }
       // =============== OPENING ===============
       mix(p, { lean: -2, headRot: -5, eyeOpen: T ? 1.12 : 0.9, smile: T ? 0.15 : 0, armX: T ? -8 : -6, armY: T ? 172 : 140, micT: 0.25, puff: T ? 0.25 : 0 }, win(t, m.open, v1 - 0.2, 0.3, 0.3));
       if (T) {
@@ -494,11 +509,17 @@
       }
 
       // blink (not when eyes are deliberately shut or winking)
-      const bp = T ? 3.7 : 4.3, bo = T ? 0.4 : 1.9;
-      if ((t + bo) % bp < 0.11 && !p.eyeHappy && !p.wink && p.eyeOpen > 0.1) p.eyeOpen = 0.02;
+      // irregular blinks: 2.4–6 s apart, 0.2 s long (half-lid → shut → half-lid)
+      { const seed = T ? 3 : 11; let tt = 1.0 + seed * 0.13, k2 = 0;
+        while (tt < t - 0.25 && k2 < 400) { tt += 2.4 + 3.6 * hash(seed * 31 + k2); k2++; }
+        const ph = (t - tt) / 0.2;
+        if (ph >= 0 && ph <= 1 && !p.eyeHappy && !p.wink && p.eyeOpen > 0.1) p.blinkPh = ph; }
       const mo = this.mouth(id, t);
       p.jaw = Math.max(p.jaw, mo.jaw);
       p.mouthO = Math.max(p.mouthO, mo.o);
+      p.mouthState = mo.state;
+      p.held = mo.held ? 1 : 0;
+      if (mo.state) p.blinkPh = null;
       if (p.jaw > 0.15) p.tongueOut = 0;
       return p;
     }

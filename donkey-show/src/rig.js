@@ -306,22 +306,30 @@
       this.neck.setAttribute('display', 'none');
     }
 
+    // which drawn state to show: the mouth chart (kit v3, cells m01–m12) while singing/speaking,
+    // gaze/blink/lid cells when listening, and the big expression drawings for acting beats
     pickExpr(p) {
-      const open = p.jaw > 0.22;
-      const nervous = (p.sweat || 0) >= 1 || (p.bulge || 1) > 1.12 || (p.frown || 0) > 0.35 || (p.pupil || 1) < 0.55 || (p.tear || 0) > 0.5;
-      if (this.id === 'T') {
-        if (open) return nervous && !(p.grin > 0.5) ? 'worried' : 'sing';
-        if ((p.blush || 0) > 0.5 || (p.grin > 0.5 && (p.sweat || 0) >= 1)) return 'embarrassed';
-        if (p.grin > 0.5 || p.wink) return 'sly';
-        if ((p.bulge || 1) > 1.1 || p.eyeOpen > 1.25 || p.mouthO > 0.5 || (p.cross || 0) > 0.4) return 'surprised';
-        if ((p.frown || 0) > 0.35 || (p.tear || 0) > 0.5) return 'worried';
-        return 'smug';
+      const T = this.id === 'T';
+      const m = p.mouthState; // 'closed' | 'closing' | 'half' | 'halfdown' | 'wide' | 'o' | null (silent)
+      const nervous = (p.sweat || 0) >= 1 || (p.bulge || 1) > 1.12 || (p.frown || 0) > 0.35 || (p.pupil || 1) < 0.55;
+      if (m) {
+        if (m === 'wide' && p.held && (p.eyeHappy > 0.5 || p.puff > 0.3)) return 'sing'; // held big note: eyes shut
+        if (m === 'wide' && nervous) return T ? 'worried' : 'scared';
+        return { closed: 'm07', closing: 'm12', half: 'm08', halfdown: 'm11', wide: 'm09', o: 'm10' }[m];
       }
-      if (open) return nervous || (p.bulge || 1) > 1.1 ? 'scared' : 'sing';
-      if (p.grin > 0.5 && ((p.sweat || 0) >= 1 || (p.blush || 0) > 0.5)) return 'smuggrin';
-      if (p.grin > 0.5) return 'sly';
+      if ((p.blush || 0) > 0.5 || (p.grin > 0.5 && (p.sweat || 0) >= 1)) return T ? 'embarrassed' : 'smuggrin';
+      if (p.grin > 0.5 || p.wink) return 'sly';
+      if (p.jaw > 0.3 && nervous) return T ? 'worried' : 'scared';
+      if (p.jaw > 0.3) return 'm09';
       if ((p.bulge || 1) > 1.1 || p.eyeOpen > 1.25 || p.mouthO > 0.5 || (p.cross || 0) > 0.4) return 'surprised';
-      return 'grumpy';
+      if (p.blinkPh != null) return p.blinkPh < 0.3 || p.blinkPh > 0.7 ? 'm05' : 'm04';
+      if (p.eyeOpen < 0.08 || p.eyeHappy > 0.5) return 'm04';
+      if ((p.frown || 0) > 0.35 || (p.tear || 0) > 0.5) return T ? 'worried' : 'grumpy';
+      if (p.lookX > 0.5) return T ? 'm03' : 'm02';                        // looks at the partner
+      if (p.lookX < -0.5) return 'm01';                                   // looks out front, at us
+      if (p.eyeOpen < 0.78) return 'm05';
+      if ((p.smile || 0) > 0.6 || (p.brow || 0) > 0.6) return 'm06';
+      return T ? 'm06' : 'm05';
     }
 
     buildArm(layer, kind) {
@@ -417,7 +425,7 @@
       this.headWorld = (x, y) => { const q = rot(x * hs, y * hs, hr); return [q[0] + nt[0], q[1] + nt[1]]; };
       this.applyFace(p, ear);
       if (this.sprite) {
-        const SK = this.id === 'T' ? { k: 0.78, drop: 12, mdx: 75, mdy: -250 } : { k: 0.76, drop: 12, mdx: 95, mdy: -150 };
+        const SK = this.id === 'T' ? { k: 1.06, drop: 12, mdx: 4, mdy: -112 } : { k: 0.95, drop: 12, mdx: -7, mdy: -127 };
         const name = this.pickExpr(p);
         if (name !== this.sprite.cur) {
           if (this.sprite.cur) this.sprite.imgs[this.sprite.cur].setAttribute('display', 'none');
@@ -426,7 +434,7 @@
         }
         const nb2 = toWorld(...this.torsoPts.neck);
         const hrs = (p.headRot + lean * 0.4) * 0.8 + (p.neckRot || 0);
-        const sk = SK.k * (1 + 0.02 * (p.jaw || 0));
+        const sk = SK.k;
         this.sprite.g.setAttribute('transform', `translate(${f1(nb2[0] + p.headDx * 0.6)},${f1(nb2[1] + SK.drop + p.headDy * 0.6)}) rotate(${f1(hrs)}) scale(${sk.toFixed(3)})`);
         this.headWorld = (x, y) => { const q = rot(SK.mdx * sk, SK.mdy * sk, hrs); return [q[0] + nb2[0], q[1] + nb2[1] + SK.drop]; };
         this.spriteMouth = this.headWorld(0, 0);
@@ -465,7 +473,7 @@
       const chest = [shF[0] + 22, shF[1] + 118];
       const micAng = (this.sprite ? -18 : -38) + (p.micTilt || 0); // mic points up toward the muzzle
       const micDir = [Math.cos((micAng - 90) * D2R), Math.sin((micAng - 90) * D2R)];
-      const mOff = this.sprite ? [this.id === 'T' ? 0 : -4, this.id === 'T' ? 112 : 70] : [26, 6];
+      const mOff = this.sprite ? [this.id === 'T' ? 22 : 18, this.id === 'T' ? 60 : 56] : [26, 6];
       const headTarget = [mouthW[0] + mOff[0] - micDir[0] * 74 + (p.micDx || 0), mouthW[1] + mOff[1] - micDir[1] * 74 + (p.micDy || 0)];
       const mt = clamp(p.micT, 0, 1);
       const handM = [chest[0] + (headTarget[0] - chest[0]) * mt, chest[1] + (headTarget[1] - chest[1]) * mt];

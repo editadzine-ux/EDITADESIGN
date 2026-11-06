@@ -20,11 +20,21 @@ WHO = {'v1a':'both','v1b':'T','v1c':'S','v1d':'T','v1e':'both','v2a':'both','v2b
        's1a':'T','s1b':'S','s1c':'T','s1d':'S','s1e':'T','s2a':'T','s2b':'S','s2c':'T','s2d':'T',
        'o1':'T','o2':'S','o3':'T','o4':'S','o5':'T','o6':'S','o7':'T'}
 VOWELS = re.compile('[ִ-ׇֻ]|וּ|וֹ')
+def ends_on_o(text):
+    # last vowel sign of the line: holam (U+05B9), kubutz (U+05BB) or shuruk (vav + dagesh)
+    for i in range(len(text) - 1, -1, -1):
+        ch = text[i]
+        if ch in '\u05b9\u05bb': return True
+        if ch == '\u05bc' and i > 0 and text[i - 1] == '\u05d5': return True
+        if '\u05b0' <= ch <= '\u05bb' or ch == '\u05c7': return False
+    return False
+
 cues = []
 for i, (cid, text) in enumerate(zip(ids, lines)):
     s, e = T[cid]
     cues.append({'id': cid, 'who': WHO[cid], 'kind': 'sing' if cid[0] == 'v' else 'speak',
-                 'start': s, 'end': e, 'text': text, 'syll': len(VOWELS.findall(text))})
+                 'start': s, 'end': e, 'text': text, 'syll': len(VOWELS.findall(text)),
+                 'oEnd': ends_on_o(text)})
 b = np.array(json.load(open(beats))['beats'])
 k = np.round((b - b[0]) / np.median(np.diff(b)))
 slope, icpt = np.polyfit(k, b, 1)
