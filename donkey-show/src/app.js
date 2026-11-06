@@ -50,6 +50,9 @@
     cuS: { s: 1.95, cx: 1345, cy: 515 },
     full: { s: 1.0, cx: 965, cy: 555 },
     feet: { s: 1.6, cx: 965, cy: 770 },
+    band: { s: 1.25, cx: 975, cy: 740 },
+    cuBass: { s: 2.5, cx: 945, cy: 735 },
+    cuDrum: { s: 2.6, cx: 1560, cy: 760 },
   };
 
   function earLag(id, t) {

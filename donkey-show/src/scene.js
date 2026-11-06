@@ -14,6 +14,13 @@
   function buildBackground(world) {
     const g = el('g', { class: 'bg' }, world);
     el('rect', { x: -600, y: -400, width: 3120, height: 1900, fill: C.bg }, g);
+    // 'Vegas' fantasy: flat golden sunburst (hidden unless they're dreaming)
+    const rays = el('g', { opacity: 0 }, g);
+    const raysIn = el('g', {}, rays);
+    for (let i = 0; i < 28; i++) {
+      const a0 = (i / 28) * Math.PI * 2, a1 = a0 + Math.PI / 28;
+      el('path', { d: `M0,0 L${f1(Math.cos(a0) * 1900)},${f1(Math.sin(a0) * 1900)} L${f1(Math.cos(a1) * 1900)},${f1(Math.sin(a1) * 1900)} Z`, fill: '#f6dc93' }, raysIn);
+    }
     // floor
     el('ellipse', { cx: 960, cy: 975, rx: 800, ry: 72, fill: C.floor, stroke: INK, 'stroke-width': 4 }, g);
     // soft follow-spots on the floor (only in the delusional 'Vegas' moments)
@@ -46,7 +53,7 @@
     el('path', { d: sd + ' Z', fill: C.star, stroke: INK, 'stroke-width': 4.5, 'stroke-linejoin': 'round', transform: 'rotate(-7 0 186)' }, starInner);
     starG.setAttribute('transform', `translate(${f1(mid.x)},${f1(mid.y + 46)})`);
     front.appendChild(lights);
-    return { g, bulbs, starInner, front, spots };
+    return { g, bulbs, starInner, front, spots, rays, raysIn };
   }
 
   function curtainPanel(parent, w, h, folds, flip) {
@@ -229,27 +236,40 @@
       const tap = Math.pow(Math.abs(Math.cos(o.beat * Math.PI)), 6);
       a[0].up.setAttribute('transform', `rotate(${36})`);
       a[0].lo.setAttribute('transform', `translate(0,40) rotate(${60 - 16 * tap})`);
-      const tap2 = Math.max(o.finalHit || 0, o.rim || 0);
+      const tap2 = Math.max(o.finalHit || 0, o.rim || 0, o.tss || 0);
       a[1].up.setAttribute('transform', `rotate(${-42 - 10 * tap2})`);
       a[1].lo.setAttribute('transform', `translate(0,40) rotate(${-52 + 12 * Math.pow(Math.abs(Math.sin(o.beat * Math.PI)), 6) - 20 * tap2})`);
       M.drums.cym.setAttribute('transform', `translate(110,-192) rotate(${f1(4 * (o.cymbal || 0))})`);
     }
-    // faces: bored lids, occasional blink; bassist can raise one eyebrow
-    const setEyes = (H, lid, browUp, blink, roll = 0) => {
+    // faces: bored by default; o.faces[name] can override gaze, lids, brows, mouth and head tilt
+    const MOUTH = {
+      flat: 'M-9,18 Q0,15 9,18', smile: 'M-11,14 Q0,27 11,14', smirk: 'M-9,19 Q2,20 11,12',
+      o: 'M-5,18 a5,6 0 1 0 10,0 a5,6 0 1 0 -10,0', yawn: 'M-8,16 a8,10 0 1 0 16,0 a8,10 0 1 0 -16,0',
+    };
+    const blink = (seed) => ((o.t * 0.37 + seed) % 4.1) < 0.12;
+    const face = (name, H, base, seed) => {
+      const f = Object.assign({ lid: base.lid, lookX: 0, lookY: 0, brow: 0, browR: base.browR || 0, mouth: 'flat', tilt: 0, dy: 0 }, (o.faces || {})[name] || {});
+      const shut = f.lid >= 0.98 || (blink(seed) && f.lid < 0.9 && !f.noBlink);
       H.eyes.forEach((E, i) => {
-        const l = blink ? 1 : lid;
-        E.eg.children[1].setAttribute('cy', f1(3 - roll * 8));
+        const l = shut ? 1 : f.lid;
+        E.eg.children[1].setAttribute('cx', f1(f.lookX * 3.2));
+        E.eg.children[1].setAttribute('cy', f1(3 + f.lookY * 3.6));
         const y = -9 + l * 16;
         E.lid.setAttribute('d', `M-8,-10 L8,-10 L8,${f1(y)} L-8,${f1(y)} Z`);
         E.line.setAttribute('d', `M-7.5,${f1(y)} L7.5,${f1(y)}`);
-        const up = i === 1 ? browUp : 0;
+        const up = f.brow + (i === 1 ? f.browR : 0);
         E.brow.setAttribute('d', `M-7,${f1(-13 - up * 8)} L7,${f1(-13 - up * 11)}`);
       });
+      H.mouth.setAttribute('d', MOUTH[f.mouth] || MOUTH.flat);
+      H.mouth.setAttribute('fill', f.mouth === 'o' || f.mouth === 'yawn' ? '#8f3a35' : 'none');
+      return f;
     };
-    const blink = (seed) => ((o.t * 0.37 + seed) % 4.1) < 0.12;
-    setEyes(M.piano.head, 0.55 - (o.pianoRoll || 0) * 0.25, 0, blink(0.3) && !o.pianoRoll, o.pianoRoll || 0);
-    setEyes(M.bass.head, 0.5 - (o.bassBrow || 0) * 0.2, o.bassBrow || 0, blink(1.7));
-    setEyes(M.drums.head, 0.6, 0, blink(2.9));
+    const fp = face('piano', M.piano.head, { lid: 0.55 }, 0.3);
+    const fb = face('bass', M.bass.head, { lid: 0.5, browR: o.bassBrow || 0 }, 1.7);
+    const fd = face('drums', M.drums.head, { lid: 0.6 }, 2.9);
+    M.piano.head.g.setAttribute('transform', `rotate(${f1(-4 + 1.5 * sinb(1) + fp.tilt)}) translate(0,${f1((o.pianoNod || 0) + fp.dy)})`);
+    M.bass.head.g.setAttribute('transform', `rotate(${f1(3 + 1.2 * sinb(0.5) + fb.tilt)}) translate(0,${f1((o.bassNod || 0) + fb.dy)})`);
+    M.drums.head.g.setAttribute('transform', `rotate(${f1(fd.tilt + (o.drumBob || 0) * 6 * sinb(1))}) translate(0,${f1(fd.dy + (o.drumBob || 0) * 4 * Math.abs(sinb(1)))})`);
   }
 
   function poseStage(S, st) {
@@ -269,6 +289,26 @@
       B.b.setAttribute('fill', on > 0.5 ? C.bulb : C.bulbOff);
     });
     S.bg.starInner.setAttribute('transform', `rotate(${f1(st.star)})`);
+    // fantasy
+    const F = st.fantasy || 0, t = st.t || 0;
+    S.bg.rays.setAttribute('opacity', (F * 0.85).toFixed(2));
+    S.bg.raysIn.setAttribute('transform', `translate(960,560) rotate(${f1(t * 6)})`);
+    S.fx.setAttribute('display', F > 0.02 ? 'inline' : 'none');
+    if (F > 0.02) {
+      const hs = (n) => { const x = Math.sin(n * 91.7 + 13.1) * 43758.5; return x - Math.floor(x); };
+      const ft = st.fantasyT || 0;
+      S.bills.forEach((b, i) => {
+        const x = 120 + hs(i) * 1680, sp = 140 + hs(i + 50) * 120, y = -80 + ((hs(i + 9) * 1100 + ft * sp) % 1200);
+        const r = Math.sin(ft * (1.5 + hs(i + 3) * 2) + i) * 40, sx = Math.cos(ft * (2 + hs(i + 7) * 3) + i);
+        b.setAttribute('transform', `translate(${f1(x + Math.sin(ft * 1.3 + i) * 40)},${f1(y)}) rotate(${f1(r)}) scale(${sx.toFixed(2)},1)`);
+        b.setAttribute('opacity', F.toFixed(2));
+      });
+      S.sparks.forEach((e, i) => {
+        const x = 160 + hs(i + 31) * 1600, y = 160 + hs(i + 61) * 520, pulse = Math.max(0, Math.sin(ft * 5 + i * 1.7));
+        e.setAttribute('transform', `translate(${f1(x)},${f1(y)}) scale(${(pulse * 0.9 + 0.1).toFixed(2)})`);
+        e.setAttribute('opacity', F.toFixed(2));
+      });
+    }
   }
 
   DS.buildStage = function (svg) {
@@ -276,9 +316,20 @@
     const bg = buildBackground(world);
     const orch = buildOrchestra(world);
     const actors = el('g', { id: 'actors' }, world);
+    // money + sparkles that rain only during the fantasy
+    const fx = el('g', { class: 'fantasy', display: 'none' }, world);
+    const bills = [], sparks = [];
+    for (let i = 0; i < 26; i++) {
+      const b = el('g', {}, fx);
+      el('rect', { x: -34, y: -17, width: 68, height: 34, rx: 3, fill: '#a9d3a0', stroke: INK, 'stroke-width': 3.5 }, b);
+      el('circle', { cx: 0, cy: 0, r: 9, fill: 'none', stroke: INK, 'stroke-width': 2.5 }, b);
+      el('path', { d: 'M-26,-10 L-26,10 M26,-10 L26,10', stroke: INK, 'stroke-width': 2.5 }, b);
+      bills.push(b);
+    }
+    for (let i = 0; i < 16; i++) sparks.push(el('path', { d: 'M0,-22 C3,-5 5,-3 22,0 C5,3 3,5 0,22 C-3,5 -5,3 -22,0 C-5,-3 -3,-5 0,-22 Z', fill: C.star, stroke: INK, 'stroke-width': 3 }, fx));
     const curtains = buildCurtains(world);
     world.appendChild(bg.front);
-    return { world, bg, orch, actors, curtains };
+    return { world, bg, orch, actors, curtains, fx, bills, sparks };
   };
   DS.poseOrchestra = poseOrchestra;
   DS.poseStage = poseStage;

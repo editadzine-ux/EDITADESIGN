@@ -174,6 +174,13 @@
       // button
       el('circle', { cx: -wh * 0.62 - b * 0.4, cy: -H * 0.32, r: 6.5, fill: s.buckle, stroke: INK, 'stroke-width': 3 }, g);
       this.torsoPts = { shoulderB: [-sh + 6, -H + 14], shoulderF: [sh - 6, -H + 14], neck: [6, -H + 4] };
+      // empty pockets turned inside out (hidden until needed)
+      this.pockets = [-1, 1].map((k) => {
+        const pg = el('g', { display: 'none' }, g);
+        el('path', { d: 'M-15,0 L15,0 L11,30 Q0,38 -11,30 Z', fill: '#fbf8f0', stroke: INK, 'stroke-width': 3.5, 'stroke-linejoin': 'round' }, pg);
+        el('path', { d: 'M-6,12 L-2,18 M4,10 L7,20', stroke: '#cfc4b3', 'stroke-width': 2.5 }, pg);
+        return { pg, x: k * (wh * 0.96 + b * 0.3), y: -4 };
+      });
     }
 
     buildNeck() {
@@ -265,6 +272,10 @@
       this.tear = el('path', { d: drop, fill: '#a9d8ef', stroke: INK, 'stroke-width': 3, display: 'none' }, hg);
       // motion marks (like the little curved strokes in the reference art), in body space
       this.marks = el('g', { fill: 'none', stroke: INK, 'stroke-width': 4, 'stroke-linecap': 'round' }, this.body);
+      // a moth that flies out of an empty pocket
+      this.moth = el('g', { display: 'none' }, this.body);
+      this.mothW = el('path', { d: 'M0,0 C-10,-22 -30,-20 -26,-4 C-24,6 -8,6 0,0 Z M0,0 C10,-22 30,-20 26,-4 C24,6 8,6 0,0 Z', fill: '#d8d0c4', stroke: INK, 'stroke-width': 3, 'stroke-linejoin': 'round' }, this.moth);
+      el('ellipse', { cx: 0, cy: 2, rx: 4, ry: 9, fill: '#8a7f73', stroke: INK, 'stroke-width': 2.5 }, this.moth);
     }
 
     buildArm(layer, kind) {
@@ -333,6 +344,19 @@
       this.tg.setAttribute('transform', `translate(${f1(pv[0])},${f1(pv[1])}) rotate(${f1(lean)}) scale(${puffX.toFixed(3)},${puffY.toFixed(3)})`);
       const toWorld = (x, y) => { const q = rot(x * puffX, y * puffY, lean); return [q[0] + pv[0], q[1] + pv[1]]; };
       const shB = toWorld(...this.torsoPts.shoulderB), shF = toWorld(...this.torsoPts.shoulderF);
+      const pk = p.pockets || 0;
+      this.pockets.forEach((P) => {
+        P.pg.setAttribute('display', pk > 0.05 ? 'inline' : 'none');
+        P.pg.setAttribute('transform', `translate(${P.x},${P.y}) scale(1.7,${(pk * 1.7).toFixed(2)})`);
+      });
+      const mo = p.moth || 0;
+      if (mo > 0 && mo < 1) {
+        const pw = toWorld(this.pockets[1].x, 20);
+        const mx = pw[0] + 70 * Math.sin(mo * 8) + mo * 40, my = pw[1] - mo * 420;
+        this.moth.setAttribute('display', 'inline');
+        this.moth.setAttribute('transform', `translate(${f1(mx)},${f1(my)}) rotate(${f1(15 * Math.sin(mo * 13))}) scale(1.8)`);
+        this.mothW.setAttribute('transform', `scale(1,${(0.25 + 0.75 * Math.abs(Math.sin(p.t * 38))).toFixed(2)})`);
+      } else this.moth.setAttribute('display', 'none');
       shB[1] += p.shrug || 0; shF[1] += p.shrug || 0;
       const nb = toWorld(...this.torsoPts.neck);
       const neckAng = -90 + s.neckAng + lean + (p.neckRot || 0);
