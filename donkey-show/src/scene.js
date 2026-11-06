@@ -9,7 +9,7 @@
   const f1 = (n) => Math.round(n * 10) / 10;
 
   const C = {
-    navy: '#0b1236', curtain: '#c4122f', curtainDark: '#8f0c22', gold: '#e9b54a', goldDark: '#b9832a',
+    navy: '#060b31', curtain: '#c4122f', curtainDark: '#8f0c22', gold: '#e9b54a', goldDark: '#b9832a',
     riser: '#87562a', riserTop: '#a86e36', platform: '#e2a443', platformRim: '#c2862e', bulb: '#ffe7a3',
     fur: '#8d5332', hair: '#5e321b', face: '#f3c7a2', skin: '#f3c7a2', earIn: '#f0a596',
     wood: '#8f5a2c', woodDark: '#6d4220', bass: '#d98a2c',

@@ -4,6 +4,13 @@
   const DS = window.DS;
   const params = new URLSearchParams(location.search);
   const RENDER = params.has('render');
+  // vertical 9:16 master for phones (?v=1): same animation, every shot re-framed for a 1080x1920 frame
+  const VERT = params.has('v');
+  const FW = VERT ? 1080 : 1920, FH = VERT ? 1920 : 1080;
+  if (VERT) {
+    document.body.classList.add('vert');
+    document.getElementById('svg').setAttribute('viewBox', `0 0 ${FW} ${FH}`);
+  }
   const STORE = 'donkey-show-timing-v7';
   const $ = (s) => document.querySelector(s);
 
@@ -78,6 +85,7 @@
     marks.fret = ctmPoint(g.armF.end, 0, 0);
     marks.guit = ctmPoint(g.torso, 0, -150);
     marks.rip = ctmPoint(S.tg, -50, -40);
+    marks.xT = pT.x + (pT.dx || 0); marks.xS = pS.x + (pS.dx || 0);
   }
   function framing(k) {
     if (SHOTS[k]) return SHOTS[k];
@@ -88,16 +96,35 @@
     const lift = /face/.test(k) ? 150 / sc : 0;
     return { s: sc, cx: m[0], cy: m[1] + lift - (k.startsWith('x') ? 0 : 20) };
   }
+  // vertical re-framing: two-shots fit both donkeys across the narrow frame, dialogue follows the speaker,
+  // close-ups keep their framing (they simply show less to the sides and more above and below)
+  const FIT = { wide: [190, 600, 1.0], xwide: [200, 600, 0.95], two: [175, 540, 1.05], feet: [125, 800, 1.2], curtain: null };
+  function vert(f, k, t) {
+    if (!VERT || !f) return f;
+    if (k === 'dlg') {
+      const c = choreo.anyActive(t);
+      if (c && c.who !== 'both') return vert(framing(c.who === 'T' ? 'faceT' : 'faceS'), 'face', t);
+      k = 'two';
+    }
+    const F = FIT[k];
+    if (F) {
+      const a = marks.xT || 680, b = marks.xS || 1265, span = Math.abs(b - a) + 2 * F[0];
+      const sc = Math.max(F[2], Math.min(1.7, FW / span));
+      return { s: sc, cx: (a + b) / 2 + 10, cy: F[1] };
+    }
+    if (k === 'face' || /^(x?face[TS]|cuT|cuS)$/.test(k)) return { s: f.s * 0.95, cx: f.cx, cy: f.cy + 60 / f.s };
+    return f;
+  }
   const EASE = { io: (u) => u * u * (3 - 2 * u), out: (u) => 1 - Math.pow(1 - u, 3), in: (u) => u * u * u, lin: (u) => u };
   const camState = { idx: -1, t: -1, cx: 0, cy: 0 };
   function camera(t) {
     const shots = data.shots;
     let cur = shots[0];
     for (const sh of shots) if (t >= sh.t) cur = sh;
-    let f = framing(cur.k);
+    let f = vert(framing(cur.k), cur.k, t);
     if (cur.to) {
       const u = (EASE[cur.e || 'io'])(Math.max(0, Math.min(1, (t - cur.t) / (cur.d || 1))));
-      const g = framing(cur.to);
+      const g = vert(framing(cur.to), cur.to, t);
       f = { s: Math.exp(Math.log(f.s) + (Math.log(g.s) - Math.log(f.s)) * u), cx: f.cx + (g.cx - f.cx) * u, cy: f.cy + (g.cy - f.cy) * u };
     }
     let sc = f.s;
@@ -138,7 +165,7 @@
     stage.world.removeAttribute('transform');
     measure(pT, pS);
     const sh = camera(t);
-    stage.world.setAttribute('transform', `translate(960,540) scale(${sh.s.toFixed(4)}) translate(${(-sh.cx).toFixed(1)},${(-sh.cy).toFixed(1)})`);
+    stage.world.setAttribute('transform', `translate(${FW / 2},${FH / 2}) scale(${sh.s.toFixed(4)}) translate(${(-sh.cx).toFixed(1)},${(-sh.cy).toFixed(1)})`);
     // subtitles: the current line, or keep the previous one briefly across tiny gaps
     let c = choreo.anyActive(t);
     if (!c) for (const q of data.cues) if (t > q.end && t < q.end + 0.35) c = q;
@@ -337,8 +364,8 @@
   // ---------- fit + loop ----------
   function fit() {
     const wrap = $('#stageWrap'), w = wrap.clientWidth;
-    $('#stage').style.transform = `scale(${w / 1920})`;
-    wrap.style.height = (1080 * w) / 1920 + 'px';
+    $('#stage').style.transform = `scale(${w / FW})`;
+    wrap.style.height = (FH * w) / FW + 'px';
     drawTimeline();
   }
   window.addEventListener('resize', fit);

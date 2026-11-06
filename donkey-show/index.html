@@ -69,6 +69,17 @@
   body.render main { max-width: none; padding: 0; margin: 0; }
   body.render h1, body.render .ui { display: none !important; }
   body.render #stageWrap { width: 1920px; height: 1080px; border: 0; border-radius: 0; }
+  /* vertical 9:16 master */
+  body.vert #stage, body.vert #svg { width: 1080px; height: 1920px; }
+  body.vert main { max-width: 520px; }
+  body.render.vert #stageWrap { width: 1080px; height: 1920px; }
+  body.vert #sub { bottom: 250px; max-width: 980px; font-size: 62px; }
+  body.vert #title { width: 1000px; }
+  body.vert #title .t1 { font-size: 104px; }
+  body.vert #title .t2 { font-size: 46px; }
+  body.vert #title .emo { font-size: 42px; }
+  body.vert #credit .l1 { font-size: 56px; }
+  body.vert #credit .l2 { font-size: 124px; }
   @media (max-width: 640px) { h1 { font-size: 17px; } td.tx { min-width: 160px; } }
 </style>
 </head>

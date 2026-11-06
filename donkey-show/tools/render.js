@@ -13,11 +13,12 @@ const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
 const flag = (k) => args.includes('--' + k);
 const root = path.resolve(__dirname, '..');
-const url = 'file://' + path.join(root, 'index.html') + '?render=1' + (flag('mock') ? '&mock=1' : '');
+const VERT = flag('vertical');
+const url = 'file://' + path.join(root, 'index.html') + '?render=1' + (flag('mock') ? '&mock=1' : '') + (VERT ? '&v=1' : '');
 
 (async () => {
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: VERT ? { width: 1080, height: 1920 } : { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
   page.on('pageerror', (e) => console.error('page error:', e.message));
   await page.goto(url);
   await page.evaluate(() => window.__ready);
