@@ -16,6 +16,8 @@
     el('rect', { x: -600, y: -400, width: 3120, height: 1900, fill: C.bg }, g);
     // floor
     el('ellipse', { cx: 960, cy: 975, rx: 800, ry: 72, fill: C.floor, stroke: INK, 'stroke-width': 4 }, g);
+    // soft follow-spots on the floor (only in the delusional 'Vegas' moments)
+    const spots = [0, 1].map(() => el('ellipse', { cx: 0, cy: 972, rx: 190, ry: 40, fill: '#fff4dc', opacity: 0 }, g));
     // string of lights (catenary-ish), slightly crooked
     const lights = el('g', {}, g);
     const front = el('g', { class: 'lights' });
@@ -44,7 +46,7 @@
     el('path', { d: sd + ' Z', fill: C.star, stroke: INK, 'stroke-width': 4.5, 'stroke-linejoin': 'round', transform: 'rotate(-7 0 186)' }, starInner);
     starG.setAttribute('transform', `translate(${f1(mid.x)},${f1(mid.y + 46)})`);
     front.appendChild(lights);
-    return { g, bulbs, starInner, front };
+    return { g, bulbs, starInner, front, spots };
   }
 
   function curtainPanel(parent, w, h, folds, flip) {
@@ -227,15 +229,16 @@
       const tap = Math.pow(Math.abs(Math.cos(o.beat * Math.PI)), 6);
       a[0].up.setAttribute('transform', `rotate(${36})`);
       a[0].lo.setAttribute('transform', `translate(0,40) rotate(${60 - 16 * tap})`);
-      const tap2 = o.finalHit || 0;
+      const tap2 = Math.max(o.finalHit || 0, o.rim || 0);
       a[1].up.setAttribute('transform', `rotate(${-42 - 10 * tap2})`);
       a[1].lo.setAttribute('transform', `translate(0,40) rotate(${-52 + 12 * Math.pow(Math.abs(Math.sin(o.beat * Math.PI)), 6) - 20 * tap2})`);
       M.drums.cym.setAttribute('transform', `translate(110,-192) rotate(${f1(4 * (o.cymbal || 0))})`);
     }
     // faces: bored lids, occasional blink; bassist can raise one eyebrow
-    const setEyes = (H, lid, browUp, blink) => {
+    const setEyes = (H, lid, browUp, blink, roll = 0) => {
       H.eyes.forEach((E, i) => {
         const l = blink ? 1 : lid;
+        E.eg.children[1].setAttribute('cy', f1(3 - roll * 8));
         const y = -9 + l * 16;
         E.lid.setAttribute('d', `M-8,-10 L8,-10 L8,${f1(y)} L-8,${f1(y)} Z`);
         E.line.setAttribute('d', `M-7.5,${f1(y)} L7.5,${f1(y)}`);
@@ -244,7 +247,7 @@
       });
     };
     const blink = (seed) => ((o.t * 0.37 + seed) % 4.1) < 0.12;
-    setEyes(M.piano.head, 0.55, 0, blink(0.3));
+    setEyes(M.piano.head, 0.55 - (o.pianoRoll || 0) * 0.25, 0, blink(0.3) && !o.pianoRoll, o.pianoRoll || 0);
     setEyes(M.bass.head, 0.5 - (o.bassBrow || 0) * 0.2, o.bassBrow || 0, blink(1.7));
     setEyes(M.drums.head, 0.6, 0, blink(2.9));
   }
@@ -257,8 +260,11 @@
     S.curtains.R.setAttribute('transform', `translate(${f1(960 + ease * 1100 + ease * 450)},0) scale(${(1 - ease * 0.55).toFixed(3)},1)`);
     S.curtains.main.setAttribute('display', k >= 1 ? 'none' : 'inline');
     // bulbs (one of them misbehaves)
+    const ch = st.chase || 0, step = Math.floor((st.t || 0) * 7.5);
+    S.bg.spots.forEach((e, i) => { e.setAttribute('opacity', ((st.spot || 0) * 0.9).toFixed(2)); e.setAttribute('cx', f1(i ? st.spotS : st.spotT)); });
     S.bg.bulbs.forEach((B, i) => {
       let on = 1;
+      if (ch > 0.5) on = (i + step) % 3 === 0 ? 0 : 1;
       if (i === 7) on = st.badBulb;
       B.b.setAttribute('fill', on > 0.5 ? C.bulb : C.bulbOff);
     });

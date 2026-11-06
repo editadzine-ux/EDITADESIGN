@@ -4,7 +4,7 @@
   const DS = window.DS;
   const params = new URLSearchParams(location.search);
   const RENDER = params.has('render');
-  const STORE = 'donkey-show-timing-v1';
+  const STORE = 'donkey-show-timing-v2';
   const $ = (s) => document.querySelector(s);
 
   // ---------- data ----------
@@ -45,9 +45,11 @@
 
   const SHOTS = {
     wide: { s: 0.9, cx: 960, cy: 575 },
-    two: { s: 1.15, cx: 965, cy: 470 },
+    two: { s: 1.15, cx: 965, cy: 458 },
     cuT: { s: 1.5, cx: 730, cy: 410 },
     cuS: { s: 1.95, cx: 1345, cy: 515 },
+    full: { s: 1.0, cx: 965, cy: 555 },
+    feet: { s: 1.6, cx: 965, cy: 770 },
   };
 
   function earLag(id, t) {

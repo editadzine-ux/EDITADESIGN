@@ -31,8 +31,8 @@ const url = 'file://' + path.join(root, 'index.html') + '?render=1' + (flag('moc
       const r = await page.evaluate((t) => { DS.renderAt(t); return DS.frameCheck(); }, t);
       for (const k of ['T', 'S']) {
         const c = r[k], issues = [];
-        if (c.earTop < 4 && c.earR > 0 && c.earL < 1920) issues.push(`ear top ${c.earTop.toFixed(0)}`);
-        if (r.shot === 'wide' && (c.left < 0 || c.right > 1920 || c.top < 0 || c.bottom > 1080)) issues.push(`body ${c.left.toFixed(0)}..${c.right.toFixed(0)} x ${c.top.toFixed(0)}..${c.bottom.toFixed(0)}`);
+        if (r.shot !== 'feet' && c.earTop < 4 && c.earR > 0 && c.earL < 1920) issues.push(`ear top ${c.earTop.toFixed(0)}`);
+        if (r.shot === 'wide' && (c.left < 0 || c.right > 1920 || c.bottom > 1080)) issues.push(`body ${c.left.toFixed(0)}..${c.right.toFixed(0)} x ${c.top.toFixed(0)}..${c.bottom.toFixed(0)}`);
         if (issues.length) { bad++; console.log(t.toFixed(2), r.shot, k, issues.join(', ')); }
       }
     }

@@ -83,7 +83,7 @@
       torsoH: 178, shoulderHalf: 54, waistHalf: 62, belly: 4, hem: 22,
       upper: 88, fore: 84, armW: 32, foreW: 28,
       neckLen: 96, neckW: 30, neckAng: 14,
-      head: { cr: 44, cx: 2, cy: -44, mx: 112, my: -40, mrx: 44, mry: 30, mrot: -14, eye1: [36, -66], eye2: [60, -72], er: 11, teeth: 'row', earL: 150, earW: 40, sc: 1.32 },
+      head: { cr: 44, cx: 2, cy: -44, mx: 112, my: -40, mrx: 44, mry: 30, mrot: -14, eye1: [36, -66], eye2: [60, -72], er: 11, teeth: 'row', earL: 140, earW: 40, sc: 1.32 },
       ears: [{ x: -14, y: -78, ang: -30, bend: -8 }, { x: 12, y: -84, ang: 2, bend: 5 }],
       tail: true, scale: 1,
     },
@@ -253,6 +253,18 @@
       this.strawHead = el('path', { d: `M${h.mx - h.mrx * 0.55},${h.my + h.mry * 0.85} L${h.mx + 60},${h.my + h.mry * 1.5}`, stroke: '#e3c35a', 'stroke-width': 6, 'stroke-linecap': 'round', fill: 'none', display: 'none' }, hg);
       this.strawHeadOl = el('path', { d: `M${h.mx - h.mrx * 0.55},${h.my + h.mry * 0.85} L${h.mx + 60},${h.my + h.mry * 1.5}`, stroke: INK, 'stroke-width': 10, 'stroke-linecap': 'round', fill: 'none', display: 'none' }, hg);
       hg.insertBefore(this.strawHeadOl, this.strawHead);
+      // expression extras: blush, tongue sticking out, sweat drop, tear
+      const bx = h.mx - h.mrx * 1.05, byy = h.my + 4;
+      this.blush = el('g', { opacity: 0 }, hg);
+      el('ellipse', { cx: bx, cy: byy, rx: 22, ry: 12, fill: '#f08b86', opacity: 0.8 }, this.blush);
+      el('path', { d: `M${bx - 9},${byy - 3} l5,6 M${bx - 1},${byy - 4} l5,6 M${bx + 7},${byy - 3} l5,6`, stroke: '#d9615c', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, this.blush);
+      this.tongueOut = el('path', { fill: '#ee8e8a', stroke: INK, 'stroke-width': 4, 'stroke-linejoin': 'round', display: 'none' }, hg);
+      const drop = 'M0,-16 C6,-6 11,0 11,6 C11,13 6,17 0,17 C-6,17 -11,13 -11,6 C-11,0 -6,-6 0,-16 Z';
+      this.sweat = el('path', { d: drop, fill: '#a9d8ef', stroke: INK, 'stroke-width': 3.5, display: 'none' }, hg);
+      this.sweat2 = el('path', { d: drop, fill: '#a9d8ef', stroke: INK, 'stroke-width': 3.5, display: 'none' }, hg);
+      this.tear = el('path', { d: drop, fill: '#a9d8ef', stroke: INK, 'stroke-width': 3, display: 'none' }, hg);
+      // motion marks (like the little curved strokes in the reference art), in body space
+      this.marks = el('g', { fill: 'none', stroke: INK, 'stroke-width': 4, 'stroke-linecap': 'round' }, this.body);
     }
 
     buildArm(layer, kind) {
@@ -289,7 +301,8 @@
     // ---------- per-frame pose ----------
     apply(p, ear) {
       const s = this.s, h = s.head;
-      this.root.setAttribute('transform', `translate(${f1(p.x)},${f1(p.ground + p.y)}) scale(${(p.face * s.scale).toFixed(3)},${s.scale})`);
+      const sq = p.sq || 1, sx = 1 + (1 - sq) * 0.75;
+      this.root.setAttribute('transform', `translate(${f1(p.x + (p.dx || 0))},${f1(p.ground + p.y)}) scale(${(p.face * s.scale * sx).toFixed(3)},${(s.scale * sq).toFixed(3)})`);
       // pelvis
       const pv = [p.hipDx, s.hipY + p.hipDy + (p.crouch || 0)];
       const tiltRot = (x, y) => rot(x, y, p.hipRot);
@@ -298,6 +311,11 @@
         [-s.footSpread + p.fBx, -12 + p.fBy, p.fBa || 0],
         [s.footSpread + p.fFx, -12 + p.fFy, p.fFa || 0],
       ];
+      let md = '';
+      const arc = (x, y, k, n = 2, sz = 16) => { let d = ''; for (let j = 0; j < n; j++) { const r = sz + j * 9; d += `M${f1(x + k * j * 9)},${f1(y - r)} Q${f1(x + k * (j * 9 + r * 0.55))},${f1(y)} ${f1(x + k * j * 9)},${f1(y + r)} `; } return d; };
+      if ((p.arcF || 0) > 0.3) {
+        feet.forEach((f, i) => { if (f[1] < -24 || p.arcF > 0.9) md += arc(f[0] - 34, f[1] - 4, -1) + arc(f[0] + 62, f[1] - 4, 1); });
+      }
       for (let i = 0; i < 2; i++) {
         const hj = tiltRot(i ? s.hipHalf : -s.hipHalf, 0);
         const hip = [pv[0] + hj[0], pv[1] + hj[1]];
@@ -326,6 +344,13 @@
       this.hg.setAttribute('transform', `translate(${f1(nt[0])},${f1(nt[1])}) rotate(${f1(hr)}) scale(${hs})`);
       this.headWorld = (x, y) => { const q = rot(x * hs, y * hs, hr); return [q[0] + nt[0], q[1] + nt[1]]; };
       this.applyFace(p, ear);
+      if ((p.arcE || 0) > 0.3) {
+        const a = this.headWorld(-70, -150), b = this.headWorld(60, -175);
+        md += arc(a[0], a[1], -1, 2, 14) + arc(b[0], b[1], 1, 2, 14);
+      }
+      this.marks.setAttribute('d', '');
+      this.marks.innerHTML = '';
+      if (md) el('path', { d: md }, this.marks);
       // tail
       if (this.tailG) {
         const bx = pv[0] - s.waistHalf + 4, by = pv[1] + 6, sw = Math.sin(p.t * 5) * 6 + p.hipDx * 0.6;
@@ -420,19 +445,23 @@
         this.mouthLine.setAttribute('display', 'inline');
       } else this.mouthLine.setAttribute('display', 'none');
       // eyes
-      const open = clamp(p.eyeOpen, 0, 1.3);
+      const open0 = clamp(p.eyeOpen, 0, 1.45);
       this.eyes.forEach((E, k) => {
         const r = E.r;
-        const sc = open > 1 ? open : 1;
+        const wink = p.wink || 0;
+        const open = (wink > 0.5 && k === 1) || (wink < -0.5 && k === 0) ? 0.02 : open0;
+        const sc = (open > 1 ? open : 1) * (p.bulge || 1);
         E.open.setAttribute('transform', `scale(${sc.toFixed(3)})`);
-        if (p.eyeHappy > 0.5 || open < 0.08) {
+        if ((p.eyeHappy > 0.5 && !(wink && open > 0.08)) || open < 0.08) {
           E.open.setAttribute('display', 'none');
           E.closed.setAttribute('display', 'inline');
           E.closed.setAttribute('d', p.eyeHappy > 0.5 ? `M${-r},2 Q0,${-r * 1.1} ${r},2` : `M${-r},0 Q0,${r * 0.7} ${r},0`);
         } else {
           E.open.setAttribute('display', 'inline');
           E.closed.setAttribute('display', 'none');
-          const px = clamp(p.lookX, -1, 1) * r * 0.45, py = clamp(p.lookY, -1, 1) * r * 0.5 + r * 0.12;
+          const cross = (p.cross || 0) * (k ? -1 : 1);
+          const px = clamp(p.lookX + cross, -1.1, 1.1) * r * 0.45, py = clamp(p.lookY, -1, 1) * r * 0.5 + r * 0.12;
+          E.pupil.setAttribute('r', f1(r * 0.42 * (p.pupil || 1)));
           E.pupil.setAttribute('cx', f1(px));
           E.pupil.setAttribute('cy', f1(py));
           const lidY = -r * 1.1 + (1 - Math.min(1, open)) * r * 2.1;
@@ -444,6 +473,24 @@
         const bt = (p.browTilt || 0) * (k ? 1 : -1) * 14;
         E.brow.setAttribute('transform', `translate(0,${f1(by)}) rotate(${f1(bt)})`);
       });
+      // blush, tongue, sweat, tear
+      this.blush.setAttribute('opacity', clamp(p.blush || 0, 0, 1).toFixed(2));
+      const to = clamp(p.tongueOut || 0, 0, 1);
+      if (to > 0.05) {
+        const x0 = h.mx + R * 0.2, y0 = h.my + Q * 0.95, L2 = 20 + 30 * to;
+        this.tongueOut.setAttribute('d', `M${f1(x0 - 12)},${f1(y0)} C${f1(x0 + L2 * 0.4)},${f1(y0 + 2)} ${f1(x0 + L2 + 6)},${f1(y0 + L2 * 0.7)} ${f1(x0 + L2 - 4)},${f1(y0 + L2 * 0.9)} C${f1(x0 + L2 - 14)},${f1(y0 + L2 * 1.1)} ${f1(x0 + 2)},${f1(y0 + 16)} ${f1(x0 - 12)},${f1(y0 + 12)} Z`);
+        this.tongueOut.setAttribute('display', 'inline');
+      } else this.tongueOut.setAttribute('display', 'none');
+      const sw = p.sweat || 0;
+      const ph = (p.t * 0.9) % 1;
+      this.sweat.setAttribute('display', sw > 0.5 ? 'inline' : 'none');
+      this.sweat.setAttribute('transform', `translate(${f1(h.cx - h.cr * 0.7)},${f1(h.cy - h.cr * 0.65 + ph * 26)}) scale(${(0.8 + ph * 0.3).toFixed(2)})`);
+      const ph2 = (p.t * 0.9 + 0.5) % 1;
+      this.sweat2.setAttribute('display', sw > 1.5 ? 'inline' : 'none');
+      this.sweat2.setAttribute('transform', `translate(${f1(h.cx + h.cr * 0.35)},${f1(h.cy - h.cr * 1.05 + ph2 * 22)}) scale(${(0.7 + ph2 * 0.3).toFixed(2)})`);
+      const te = p.tear || 0, ph3 = (p.t * 0.6) % 1;
+      this.tear.setAttribute('display', te > 0.5 ? 'inline' : 'none');
+      this.tear.setAttribute('transform', `translate(${f1(h.eye2[0] + 4)},${f1(h.eye2[1] + 22 + ph3 * 34)}) scale(1)`);
     }
   }
 
