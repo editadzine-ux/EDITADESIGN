@@ -275,7 +275,7 @@
 
       // mic up while singing/speaking
       const act = this.active(id, t, 0.25);
-      if (t > v1 + 0.6) mix(p, { micT: act ? 1 : 0.62 }, 1);
+      if (t > v1 + 0.6) mix(p, { micT: act ? 1 : (t < C('o7').end + 0.3 ? 0.88 : 0.62) }, 1);
       if (t > v1 + 0.6 && act) mix(p, { micT: 0.62 }, 1 - win(t, act.start - 0.3, act.end + 0.3, 0.2, 0.3));
 
       if (!T) for (const fx of this.fixes()) {

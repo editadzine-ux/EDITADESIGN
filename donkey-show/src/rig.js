@@ -502,15 +502,15 @@
       const mt = clamp(p.micT, 0, 1), mOut = clamp(p.micOut || 0, 0, 1);
       const uOf = (a) => [Math.sin(a * D2R), -Math.cos(a * D2R)];
       // singing: the mic head sits just in front of and below the lower lip, leaning back toward the face
-      const headSing = [mouthW[0] + (T_ ? 26 : 22) + (p.micDx || 0), mouthW[1] + (T_ ? 30 : 28) + 10 * clamp(p.jaw || 0, 0, 1) + (p.micDy || 0)];
-      // resting at the chest, and offered out to the audience
-      const restG = [shF[0] + (T_ ? 30 : 26), shF[1] + (T_ ? 112 : 92)], ur = uOf(14), headRest = [restG[0] + ur[0] * reach, restG[1] + ur[1] * reach];
+      const headSing = [mouthW[0] + (T_ ? 26 : 22) + (p.micDx || 0), mouthW[1] + (T_ ? 26 : 12) + 10 * clamp(p.jaw || 0, 0, 1) + (p.micDy || 0)];
+      // resting: the arm hangs by the side, the mic held loosely, head pointing forward-down (reference 12)
+      const restG = [shF[0] + (T_ ? 26 : 22), shF[1] + (T_ ? 150 : 118)], ur = uOf(128), headRest = [restG[0] + ur[0] * reach, restG[1] + ur[1] * reach];
       const outG = [shF[0] + 170, shF[1] - 30], uo = uOf(80), headOut = [outG[0] + uo[0] * reach, outG[1] + uo[1] * reach];
       const e = mt * mt * (3 - 2 * mt);
       const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
       let H = lerp(lerp(headRest, headSing, e), headOut, mOut);
-      let pref = (14 + (-28 + (p.micTilt || 0) - 14) * e) * (1 - mOut) + 80 * mOut;
-      const wPref = 1.4 * (1 - e) * (1 - mOut) + 0.12 * e * (1 - mOut) + 1.4 * mOut;
+      let pref = (128 + (40 + (p.micTilt || 0) - 128) * e) * (1 - mOut) + 80 * mOut;
+      const wPref = 1.0 * (1 - e) * (1 - mOut) + 0.9 * e * (1 - mOut) + 1.4 * mOut;
       this.poseMicArm(shF, H, pref, wPref, ms, reach);
       const grip = this._grip;
       this._dbg = { shF, mouthW, grip, shB };
@@ -540,7 +540,7 @@
     poseMicArm(sh, H, pref, wPref, ms, reach) {
       const A = this.mic, hs = this.id === 'T' ? 1.5 : 1.45;
       const FC = [-2 * hs, 19 * hs];                       // fist centre (hand drawings are scaled)
-      const pole = [sh[0] + 55, sh[1] + 210];              // elbow down by the side, a little out
+      const pole = [sh[0] + 70, sh[1] + 170];              // elbow down and a little forward (reference 10)
       const solve = (a) => {
         const u = [Math.sin(a * D2R), -Math.cos(a * D2R)];
         const G = [H[0] - u[0] * reach, H[1] - u[1] * reach];
@@ -554,10 +554,10 @@
         const f = [r.end[0] - r.j[0], r.end[1] - r.j[1]], fl = Math.hypot(f[0], f[1]) || 1;
         const cross = Math.acos(clamp((f[0] * u[0] + f[1] * u[1]) / fl, -1, 1)) / D2R;
         const miss = Math.hypot(g[0] - G[0], g[1] - G[1]);
-        return { a, r, fa, g, score: Math.abs(cross - 80) + wPref * Math.abs(a - pref) + 3 * miss };
+        return { a, r, fa, g, score: Math.abs(cross - 52) + wPref * Math.abs(a - pref) + 3 * miss };
       };
       let best = null;
-      for (let a = pref - 60; a <= pref + 60; a += 3) { const c = solve(a); if (!best || c.score < best.score) best = c; }
+      for (let a = pref - 35; a <= pref + 35; a += 2.5) { const c = solve(a); if (!best || c.score < best.score) best = c; }
       for (let a = best.a - 2.5; a <= best.a + 2.5; a += 0.5) { const c = solve(a); if (c.score < best.score) best = c; }
       const { r, fa, g, a } = best;
       A.upper.set(boneT(sh, r.j));
