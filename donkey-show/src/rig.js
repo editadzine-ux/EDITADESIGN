@@ -504,7 +504,7 @@
       // singing: the mic head sits just in front of and below the lower lip, leaning back toward the face
       const headSing = [mouthW[0] + (T_ ? 26 : 22) + (p.micDx || 0), mouthW[1] + (T_ ? 26 : 12) + 10 * clamp(p.jaw || 0, 0, 1) + (p.micDy || 0)];
       // resting: the arm hangs by the side, the mic held loosely, head pointing forward-down (reference 12)
-      const restG = [shF[0] + (T_ ? 22 : 16), shF[1] + (T_ ? 164 : 134)], ur = uOf(122), headRest = [restG[0] + ur[0] * reach, restG[1] + ur[1] * reach];
+      const restG = [shF[0] + (T_ ? 30 : 24), shF[1] + (T_ ? 190 : 160)], ur = uOf(122), headRest = [restG[0] + ur[0] * reach, restG[1] + ur[1] * reach];
       const outG = [shF[0] + 170, shF[1] - 30], uo = uOf(80), headOut = [outG[0] + uo[0] * reach, outG[1] + uo[1] * reach];
       const e = mt * mt * (3 - 2 * mt);
       const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
@@ -542,30 +542,35 @@
       const A = this.mic, hs = this.id === 'T' ? 1.5 : 1.45;
       const FC = [-2 * hs, 19 * hs];                       // fist centre (hand drawings are scaled)
       const up = this._armUp || 0;                         // hanging arm: elbow straight down; singing: down and a little forward
-      const pole = [sh[0] + 10 + 60 * up, sh[1] + 240 - 70 * up];
+      const pole = [sh[0] + 45 + 25 * up, sh[1] + 150 + 20 * up];
+      const wrap = (x) => ((x % 360) + 540) % 360 - 180;
+      // the fist is oriented by the SHAFT: knuckle row along the mic, fingers wrapping across it (reference 10);
+      // of the two ways to wrap, use the one with the least wrist bend
+      const fistAng = (a, fore) => (Math.abs(wrap(a - 90 - fore)) <= Math.abs(wrap(a + 90 - fore)) ? a - 90 : a + 90);
       const solve = (a) => {
         const u = [Math.sin(a * D2R), -Math.cos(a * D2R)];
         const G = [H[0] - u[0] * reach, H[1] - u[1] * reach];
-        let fa = a + 90, r = null;
-        for (let it = 0; it < 2; it++) {
-          const q = rot(FC[0], FC[1], fa);
+        let fh = a + 90, r = null, fore = 0;
+        for (let it = 0; it < 3; it++) {
+          const q = rot(FC[0], FC[1], fh);
           r = this.solveArm(sh, [G[0] - q[0], G[1] - q[1]], pole);
-          fa = Math.atan2(r.end[1] - r.j[1], r.end[0] - r.j[0]) / D2R - 90;
+          fore = Math.atan2(r.end[1] - r.j[1], r.end[0] - r.j[0]) / D2R - 90;
+          fh = fistAng(a, fore);
         }
-        const q = rot(FC[0], FC[1], fa), g = [r.end[0] + q[0], r.end[1] + q[1]];
+        const q = rot(FC[0], FC[1], fh), g = [r.end[0] + q[0], r.end[1] + q[1]];
         const f = [r.end[0] - r.j[0], r.end[1] - r.j[1]], fl = Math.hypot(f[0], f[1]) || 1;
         const cross = Math.acos(clamp((f[0] * u[0] + f[1] * u[1]) / fl, -1, 1)) / D2R;
         const miss = Math.hypot(g[0] - G[0], g[1] - G[1]);
-        return { a, r, fa, g, score: Math.abs(cross - 52) + wPref * Math.abs(a - pref) + 3 * miss };
+        return { a, r, fa: fore, fh, g, score: Math.abs(cross - 52) + wPref * Math.abs(a - pref) + 3 * miss };
       };
       let best = null;
       for (let a = pref - 35; a <= pref + 35; a += 2.5) { const c = solve(a); if (!best || c.score < best.score) best = c; }
       for (let a = best.a - 2.5; a <= best.a + 2.5; a += 0.5) { const c = solve(a); if (c.score < best.score) best = c; }
-      const { r, fa, g, a } = best;
+      const { r, fa, fh, g, a } = best;
       A.upper.set(boneT(sh, r.j));
       A.fore.set(boneT(r.j, r.end));
       A.cuff.setAttribute('transform', `translate(${f1(r.end[0])},${f1(r.end[1])}) rotate(${f1(fa)}) translate(0,-8)`);
-      A.hand.setAttribute('transform', `translate(${f1(r.end[0])},${f1(r.end[1])}) rotate(${f1(fa)})`);
+      A.hand.setAttribute('transform', `translate(${f1(r.end[0])},${f1(r.end[1])}) rotate(${f1(fh)})`);
       A.micG.setAttribute('transform', `translate(${f1(g[0])},${f1(g[1])}) rotate(${f1(a)}) scale(${ms}) translate(0,38)`);
       for (const k in A.shapes) A.shapes[k].setAttribute('display', k === 'fist' ? 'inline' : 'none');
       this._grip = g;
