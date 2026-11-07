@@ -81,7 +81,7 @@
       suit: '#1fa39b', suitShade: '#168a83', shirt: '#fffdf6', tie: '#151515', belt: '#151515', buckle: '#e9b54a', sock: '#fffdf6', buttons: 2,
       hipY: -300, hipHalf: 22, thigh: 152, shin: 146, footSpread: 34, legW: 40, shinW: 34, pantsEnd: 0.72, sockW: 15,
       torsoH: 178, shoulderHalf: 54, waistHalf: 62, belly: 4, hem: 22,
-      upper: 88, fore: 84, armW: 32, foreW: 28,
+      upper: 88, fore: 84, armW: 25, foreW: 22,
       neckLen: 96, neckW: 30, neckAng: 14,
       head: { cr: 44, cx: 2, cy: -44, mx: 112, my: -40, mrx: 44, mry: 30, mrot: -14, eye1: [36, -66], eye2: [60, -72], er: 11, teeth: 'buck', earL: 150, earW: 54, sc: 1.32 },
       ears: [{ x: -14, y: -78, ang: -26, bend: -6 }, { x: 12, y: -84, ang: 4, bend: 5 }],
@@ -92,7 +92,7 @@
       suit: '#f3b51e', suitShade: '#d99c12', shirt: '#fffdf6', tie: '#a3182a', belt: '#6e4524', buckle: '#e9b54a', sock: '#fffdf6', buttons: 1,
       hipY: -196, hipHalf: 34, thigh: 98, shin: 90, footSpread: 42, legW: 96, shinW: 44, pantsEnd: 0.82, sockW: 18,
       torsoH: 150, shoulderHalf: 50, waistHalf: 98, belly: 58, hem: 34,
-      upper: 74, fore: 68, armW: 34, foreW: 30,
+      upper: 74, fore: 68, armW: 29, foreW: 25,
       neckLen: 40, neckW: 40, neckAng: 18,
       head: { cr: 48, cx: 0, cy: -46, mx: 96, my: -34, mrx: 52, mry: 40, mrot: -8, eye1: [34, -70], eye2: [60, -74], er: 12, teeth: 'buck', earL: 185, earW: 42, sc: 1.3 },
       ears: [{ x: -16, y: -80, ang: -20, bend: 0, len: 0.18 }, { x: 10, y: -88, ang: 18, bend: -130, blunt: 1 }],
@@ -347,12 +347,38 @@
       }
       const hand = el('g', {}, g);
       const shapes = {
-        open: el('path', { d: 'M-15,0 C-20,14 -24,24 -36,30 C-42,33 -38,40 -30,38 L-18,32 C-22,44 -20,54 -12,54 C-10,58 -2,58 0,52 C3,58 11,57 12,51 C18,54 24,48 20,40 C26,40 28,32 22,26 L16,0 Z', fill: s.hand, stroke: INK, 'stroke-width': 4, 'stroke-linejoin': 'round' }, hand),
-        fist: el('path', { d: 'M-15,0 C-22,8 -22,30 -10,34 C0,38 14,36 18,26 C22,16 18,4 14,0 Z M-12,14 C-4,12 6,12 14,14 M-12,23 C-4,21 6,21 14,23', fill: s.hand, stroke: INK, 'stroke-width': 4, 'stroke-linejoin': 'round' }, hand),
-        point: el('path', { d: 'M-15,0 C-22,8 -22,28 -10,32 C-4,34 2,34 4,32 L6,62 C7,68 15,68 15,62 L16,28 C20,18 18,4 14,0 Z', fill: s.hand, stroke: INK, 'stroke-width': 4, 'stroke-linejoin': 'round' }, hand),
+        open: this.makeHand(hand, 'open'), fist: this.makeHand(hand, 'fist'), point: this.makeHand(hand, 'point'), flat: this.makeHand(hand, 'flat'),
       };
       const straw = el('path', { d: 'M0,22 L-8,-40', stroke: '#e3c35a', 'stroke-width': 6, 'stroke-linecap': 'round', display: 'none' }, hand);
       return { g, upper, fore, cuff, micG, hand, shapes, straw, kind };
+    }
+
+    // hand drawings in hand space: wrist at the origin, +y points out of the sleeve
+    makeHand(parent, type) {
+      const s = this.s, g = el('g', { transform: `scale(${this.id === 'T' ? 1.5 : 1.45})` }, parent);
+      const cap = (x, y, ang, len, w) => {         // capsule from (x,y) along angle (deg from +y)
+        const a = ang * D2R, dx = Math.sin(a), dy = Math.cos(a), nx = -dy * w / 2, ny = dx * w / 2, ex = x + dx * len, ey = y + dy * len;
+        return `M${f1(x + nx)},${f1(y + ny)} L${f1(ex + nx)},${f1(ey + ny)} A${w / 2},${w / 2} 0 0 0 ${f1(ex - nx)},${f1(ey - ny)} L${f1(x - nx)},${f1(y - ny)} A${w / 2},${w / 2} 0 0 0 ${f1(x + nx)},${f1(y + ny)} Z`;
+      };
+      const parts = [], lines = [];
+      if (type === 'open') {          // spread fingers, palm up — the showman's hand from the reference
+        parts.push('M-11,2 C-16,10 -15,24 -7,28 C1,31 12,28 13,18 C14,8 10,2 6,0 Z');
+        [[-10, 22, -62, 20], [-4, 26, -27, 25], [3, 27, 8, 25], [10, 23, 42, 20]].forEach(([x, y, a, l]) => parts.push(cap(x, y, a, l, 7.5)));
+        parts.push(cap(-11, 9, -108, 17, 8));
+      } else if (type === 'flat') {   // fingers together (hand on the heart)
+        parts.push('M-13,2 C-17,14 -16,40 -10,52 C-6,60 8,60 12,52 C17,40 16,14 12,2 Z');
+        parts.push(cap(-11, 12, -22, 17, 9));
+        lines.push('M-4,30 L-4,54 M3,30 L3,55');
+      } else {                        // fist around a shaft that runs along local x (point = fist + index)
+        parts.push('M-15,8 C-16,-1 14,-1 15,8 L16,26 C16,36 -16,36 -16,26 Z');
+        parts.push(cap(-15, 8, 100, 14, 10));
+        if (type === 'point') parts.push(cap(6, 30, 0, 30, 10));
+        lines.push('M-9,10 L-9,32 M-1,10 L-1,33 M7,10 L7,32');
+      }
+      const ol = el('g', {}, g), fl = el('g', {}, g);
+      for (const d of parts) { el('path', { d, fill: INK, stroke: INK, 'stroke-width': 5.5, 'stroke-linejoin': 'round' }, ol); el('path', { d, fill: s.hand }, fl); }
+      for (const d of lines) el('path', { d, fill: 'none', stroke: INK, 'stroke-width': 3, 'stroke-linecap': 'round' }, g);
+      return g;
     }
 
     buildTail() {
@@ -453,7 +479,7 @@
         this.sprite.marks.setAttribute('display', (p.arcE || 0) > 0.3 ? 'inline' : 'none');
         this.sprite.marks.setAttribute('transform', `translate(${this.id === 'T' ? 110 : 120},${this.id === 'T' ? -380 : -300}) scale(1.6)`);
       }
-      if ((p.arcE || 0) > 0.3) {
+      if ((p.arcE || 0) > 0.3 && !this.sprite) {
         const a = this.headWorld(-70, -150), b = this.headWorld(60, -175);
         md += arc(a[0], a[1], -1, 2, 14) + arc(b[0], b[1], 1, 2, 14);
       }
@@ -475,7 +501,7 @@
       const T_ = this.id === 'T', ms = this.sprite ? 1.3 : 1, reach = 58 * ms;
       const mt = clamp(p.micT, 0, 1), mOut = clamp(p.micOut || 0, 0, 1);
       const micHead = [mouthW[0] + (T_ ? 26 : 22) + (p.micDx || 0), mouthW[1] + (T_ ? 30 : 28) + 10 * clamp(p.jaw || 0, 0, 1) + (p.micDy || 0)];
-      const want = [shF[0] + (T_ ? 58 : 44), shF[1] + (T_ ? -4 : -8)];
+      const want = [shF[0] + (T_ ? 40 : 34), shF[1] + (T_ ? 6 : 0)];
       let dx0 = want[0] - micHead[0], dy0 = want[1] - micHead[1], dl = Math.hypot(dx0, dy0) || 1;
       const gripSing = [micHead[0] + dx0 / dl * reach, micHead[1] + dy0 / dl * reach];
       const angSing = Math.atan2(-dy0, -dx0) / D2R + 90 + (p.micTilt || 0);   // mic axis points from grip to head
@@ -489,8 +515,11 @@
       this.poseMicArm(shF, grip, ang, ms);
       this._dbg = { shF, mouthW, grip, shB };
       // ---- free arm
-      const fa = [shB[0] + p.armX, shB[1] + p.armY];
-      if (p.armFront) { if (this.free.g.parentNode !== this.layers.armFrontFree) this.layers.armFrontFree.appendChild(this.free.g); }
+      const fw = clamp(p.armFront || 0, 0, 1);
+      // open gestures: lift the hand a little higher and further out so the arm reads as a clean 45° showman reach
+      const up = p.armY < 0 && fw < 0.5 ? 1.12 : 1;
+      const fa = [shB[0] + p.armX * up, shB[1] + p.armY * up];
+      if (fw > 0.5) { if (this.free.g.parentNode !== this.layers.armFrontFree) this.layers.armFrontFree.appendChild(this.free.g); }
       else if (this.free.g.parentNode !== this.layers.armBack) this.layers.armBack.appendChild(this.free.g);
       this.poseArm(this.free, shB, fa, p.hand, p.handRot || 0);
       // straw
@@ -508,7 +537,7 @@
 
     poseMicArm(sh, grip, micAng, ms) {
       const A = this.mic;
-      const pole = [sh[0] + 110, sh[1] + 170];             // elbow down and forward
+      const pole = [sh[0] + 25, sh[1] + 220];              // elbow tucked down by the body
       const FC = [-2, 19];                                 // fist centre in hand space
       let fa = micAng - 90, r = null;
       for (let it = 0; it < 3; it++) {
@@ -531,7 +560,7 @@
 
     poseArm(A, sh, target, hand, extraRot) {
       // free arm: elbow down and back (pole), so raised and lowered arms bend the same, natural way
-      const r = this.solveArm(sh, target, [sh[0] - 90, sh[1] + 140]);
+      const r = this.solveArm(sh, target, [sh[0] - 40, sh[1] + 160]);
       A.upper.set(boneT(sh, r.j));
       A.fore.set(boneT(r.j, r.end));
       const ang = Math.atan2(r.end[1] - r.j[1], r.end[0] - r.j[0]) / D2R - 90;

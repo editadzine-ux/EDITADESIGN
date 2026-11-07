@@ -440,7 +440,14 @@
     S.curtains.L.setAttribute('transform', `translate(${f1(-290 - ease * 1300)},0) scale(${(1 - ease * 0.6).toFixed(3)},1)`);
     S.curtains.R.setAttribute('transform', `translate(${f1(960 + ease * 1300 + ease * 700)},0) scale(${(1 - ease * 0.6).toFixed(3)},1)`);
     S.curtains.main.setAttribute('display', k >= 1 ? 'none' : 'inline');
-    S.bg.pools[0].setAttribute('cx', f1(st.poolT)); S.bg.pools[1].setAttribute('cx', f1(st.poolS));
+    if (S.beams) poseBeams(S.beams, st);
+    if (S.aud) {
+      S.aud.spot.setAttribute('cx', f1(960 + (st.audX || 0)));
+      S.aud.spot.setAttribute('opacity', st.audSpot == null ? 1 : st.audSpot);
+      const sf = st.signFall || 0;
+      if (S.aud.sign) S.aud.sign.setAttribute('transform', `translate(${f1(18 * sf)},${f1(230 * sf * sf)}) rotate(${f1(28 * sf)} 960 ${S.aud.signY + 52})`);
+    }
+    if (st.poolT != null) { S.bg.pools[0].setAttribute('cx', f1(st.poolT)); S.bg.pools[1].setAttribute('cx', f1(st.poolS)); }
     S.bg.pools.forEach((p) => p.setAttribute('opacity', (0.55 + 0.45 * (st.glow || 0)).toFixed(2)));
   }
 
@@ -451,7 +458,8 @@
     const sg = el('radialGradient', { id: 'seatSpot' }, defs);
     el('stop', { offset: '0%', 'stop-color': '#ffd27a', 'stop-opacity': 0.35 }, sg);
     el('stop', { offset: '100%', 'stop-color': '#ffd27a', 'stop-opacity': 0 }, sg);
-    el('ellipse', { cx: 960, cy: 560, rx: 330, ry: 260, fill: 'url(#seatSpot)' }, g);
+    const spot = el('ellipse', { cx: 960, cy: 600, rx: 300, ry: 250, fill: 'url(#seatSpot)' });
+    const AUD = { g, spot };
     for (let r = 0; r < 4; r++) {
       const w = 150 + r * 40, h = 150 + r * 50, y = 260 + r * 210, n = Math.ceil(2400 / w) + 2;
       for (let i = -Math.floor(n / 2); i <= Math.floor(n / 2); i++) {
@@ -460,14 +468,19 @@
         el('path', { d: `M${x - w / 2},${y + h} L${x - w / 2},${y + 30} C${x - w / 2},${y} ${x + w / 2},${y} ${x + w / 2},${y + 30} L${x + w / 2},${y + h} Z`,
           fill: red ? '#c4122f' : '#171127', stroke: red ? INK : '#2a2142', 'stroke-width': red ? 4.5 : 3 }, g);
         if (red) {
-          el('path', { d: `M${x - 40},${y + 56} L${x + 40},${y + 56} L${x + 40},${y + 104} L${x - 40},${y + 104} Z`, fill: '#fffaf0', stroke: INK, 'stroke-width': 3 }, g);
-          el('path', { d: `M${x - 22},${y + 56} L${x},${y + 36} L${x + 22},${y + 56}`, fill: 'none', stroke: INK, 'stroke-width': 2.5 }, g);
-          const tx = el('text', { x, y: y + 90, 'text-anchor': 'middle', 'font-family': 'Rubik, sans-serif', 'font-weight': 700, 'font-size': 28, fill: INK, direction: 'rtl' }, g);
-          tx.textContent = 'שמור';
+          const sg = el('g', {}, g);
+          el('path', { d: `M${x - 66},${y + 52} L${x + 66},${y + 52} L${x + 66},${y + 118} L${x - 66},${y + 118} Z`, fill: '#fffaf0', stroke: INK, 'stroke-width': 3.5 }, sg);
+          el('path', { d: `M${x - 30},${y + 52} L${x},${y + 30} L${x + 30},${y + 52}`, fill: 'none', stroke: INK, 'stroke-width': 2.5 }, sg);
+          const t1 = el('text', { x, y: y + 82, 'text-anchor': 'middle', 'font-family': 'Rubik, sans-serif', 'font-weight': 700, 'font-size': 27, fill: INK, direction: 'rtl' }, sg);
+          t1.textContent = 'שמור';
+          const t2 = el('text', { x, y: y + 109, 'text-anchor': 'middle', 'font-family': 'Rubik, sans-serif', 'font-weight': 500, 'font-size': 22, fill: '#c4122f', direction: 'rtl' }, sg);
+          t2.textContent = 'למשקיע';
+          AUD.sign = sg; AUD.signY = y;
         }
       }
     }
-    return g;
+    g.appendChild(spot);
+    return AUD;
   }
 
   // ---------------- cut-out band from the approved illustrations ----------------
@@ -578,6 +591,35 @@
     T.hourH.setAttribute('transform', `rotate(${f1(60 + (o.clock || 0) * 30)})`);
   }
 
+  // soft spotlight beams from the rig above + a dimmer over the band so the one in focus pops
+  function buildBeams(world, defs) {
+    const lg = el('linearGradient', { id: 'beamGrad', x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+    el('stop', { offset: '0%', 'stop-color': '#fff1c9', 'stop-opacity': 0.42 }, lg);
+    el('stop', { offset: '70%', 'stop-color': '#ffe4a0', 'stop-opacity': 0.16 }, lg);
+    el('stop', { offset: '100%', 'stop-color': '#ffe4a0', 'stop-opacity': 0.08 }, lg);
+    const dim = el('rect', { x: -700, y: -500, width: 3320, height: 1500, fill: '#030616', opacity: 0 }, world);
+    const g = el('g', { class: 'beams', style: 'mix-blend-mode: screen' }, world);
+    const mk = () => {
+      const b = el('g', { opacity: 0 }, g);
+      const cone = el('path', { fill: 'url(#beamGrad)' }, b);
+      const pool = el('ellipse', { rx: 150, ry: 30, fill: '#fff0c4', opacity: 0.35 }, b);
+      return { b, cone, pool };
+    };
+    return { g, dim, T: mk(), S: mk(), G: mk() };
+  }
+  function poseBeams(B, st) {
+    const one = (o, a, x, top, foot, wTop, wBot) => {
+      o.b.setAttribute('opacity', a.toFixed(3));
+      if (a < 0.01) return;
+      o.cone.setAttribute('d', `M${f1(x - wTop)},${top} L${f1(x + wTop)},${top} L${f1(x + wBot)},${foot} L${f1(x - wBot)},${foot} Z`);
+      o.pool.setAttribute('cx', f1(x)); o.pool.setAttribute('cy', foot - 6); o.pool.setAttribute('rx', wBot * 0.95);
+    };
+    one(B.T, st.beamT || 0, st.xT || 680, -120, 985, 46, 175);
+    one(B.S, st.beamS || 0, st.xS || 1265, -120, 985, 46, 175);
+    one(B.G, st.beamG || 0, 1535 + (st.gSlide || 0), -120, 860, 36, 135);
+    B.dim.setAttribute('opacity', (0.32 * Math.max(st.beamT || 0, st.beamS || 0) + 0.12 * (st.beamG || 0)).toFixed(3));
+  }
+
   DS.buildStage = function (svg) {
     const defs = el('defs', {}, svg);
     const world = el('g', { id: 'world' }, svg);
@@ -585,6 +627,7 @@
     const lights = buildLights(world);
     const orch = buildBand(world);
     orch.soloSpot = bg.soloSpot;
+    const beams = buildBeams(world, defs);
     const actors = el('g', { id: 'actors' }, world);
     const bandSprites = buildBandSprites(world, defs);
     if (bandSprites) {
@@ -606,8 +649,8 @@
     }
     const curtains = buildCurtains(world);
     if (bandSprites) curtains.g.children[0].setAttribute('display', 'none'), curtains.g.children[1].setAttribute('display', 'none');
-    buildAudience(world, defs);
-    return { world, bg, lights, orch, actors, curtains };
+    const aud = buildAudience(world, defs);
+    return { world, bg, lights, orch, actors, curtains, beams, aud };
   };
   DS.poseOrchestra = (M, o) => { poseBand(M, o); poseBandSprites(M.bandSprites, M, o); };
   DS.poseStage = poseStage;

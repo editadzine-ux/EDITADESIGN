@@ -11,7 +11,7 @@
     document.body.classList.add('vert');
     document.getElementById('svg').setAttribute('viewBox', `0 0 ${FW} ${FH}`);
   }
-  const STORE = 'donkey-show-timing-v7';
+  const STORE = 'donkey-show-timing-v8';
   const $ = (s) => document.querySelector(s);
 
   // ---------- data ----------
@@ -67,7 +67,7 @@
     feet: { s: 1.6, cx: 965, cy: 770 },
     turtle: { s: 2.7, cx: 1772, cy: 700 },
     band: { s: 1.5, cx: 1500, cy: 700 },
-    audience: { s: 1.0, cx: 960, cy: 2940 },
+    audience: { s: 1.6, cx: 960, cy: 2930 },
     cuDrum: { s: 2.5, cx: 946, cy: 680 },
   };
   const D = { rip: 2.5, faceT: 2.2, faceS: 2.4, xfaceT: 3.3, xfaceS: 3.5, guitFace: 3.0, fret: 3.0, guit: 1.9 };
@@ -178,7 +178,7 @@
       title.style.transform = `translate(-50%, -50%) scale(${(0.97 + 0.03 * a1 + 0.012 * cl(t / op)).toFixed(4)})`;
       title.children[1].style.width = (420 * a2) + 'px';
       title.children[2].style.opacity = a2.toFixed(3); }
-    const ct = data.musicEnd + 3.15, co = Math.max(0, Math.min(1, (t - ct) / 0.8));
+    const ct = data.musicEnd + 3.9, co = Math.max(0, Math.min(1, (t - ct) / 0.8));
     credit.style.opacity = co.toFixed(3);
     credit.style.transform = `translate(-50%, -50%) scale(${(0.96 + 0.04 * co).toFixed(3)})`;
   }

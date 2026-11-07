@@ -112,6 +112,24 @@
       const slide = Math.sin(Math.PI * b * 2);
       return { headDx: 22 * slide, headRot: 0, lean: 0, hipDy: 10, armFront: 1, armX: 140, armY: -70, hand: 'open', handRot: -90, fBy: !mod2(b) ? -14 : 0, fFy: mod2(b) ? -14 : 0, fBx: 0, fFx: 0, eyeOpen: 0.7, lidTilt: -0.3, smile: 0.6 };
     },
+    // running man: the planted foot slides back while the other knee pumps up; fists pump
+    runningMan(b, k) {
+      const fr = frac(b), s2 = mod2(b), lift = sinp(fr), slide = (0.5 - fr) * 70 * k;
+      const o = { hipDy: 22 + 8 * lift, lean: 4, headRot: 4 * Math.sin(Math.PI * b * 2), fBx: 0, fBy: 0, fFx: 0, fFy: 0, fBa: 0, fFa: 0, arcF: 1,
+        armX: -70 + 50 * Math.sin(Math.PI * b), armY: 10 - 50 * Math.cos(Math.PI * b), hand: 'fist', handRot: 0 };
+      if (s2) { o.fFy = -60 * lift * k; o.fFx = 30 * lift; o.fBx = slide; } else { o.fBy = -60 * lift * k; o.fBx = 30 * lift; o.fFx = slide; }
+      return o;
+    },
+    // windmill: the free arm spins in big circles, knees bounce
+    windmill(b, k) {
+      const th = b * Math.PI; const bob = 0.5 + 0.5 * Math.cos(2 * Math.PI * b);
+      return { armX: -10 - 150 * Math.cos(th), armY: -60 - 150 * Math.sin(th), hand: 'open', handRot: th * 57.3 % 360, hipDy: 16 + 16 * bob, lean: -4, fBy: 0, fFy: 0, fBx: -20, fFx: 20, arcE: 1 };
+    },
+    // belly shake: hips shimmy 4x per beat, belly puffs, fists out
+    shake(b, k) {
+      const q = Math.sin(Math.PI * b * 4);
+      return { hipDx: 16 * q, hipRot: 6 * q, puff: 0.55 + 0.2 * Math.abs(q), lean: -6, hipDy: 20, fBx: -26, fFx: 26, fBy: 0, fFy: 0, armX: -110, armY: 30 + 10 * q, hand: 'fist', headRot: -3 * q, arcF: 1 };
+    },
     // frantic tiny steps (4 per beat)
     scramble(b, k) {
       const e = b * 4, fr = frac(e), lift = sinp(fr), s = mod2(e);
@@ -317,6 +335,8 @@
         } else {
           mix(p, { lookX: 0.9, eyeOpen: 0.85, brow: 0.5, lookY: -0.6 }, win(t, a.start, a.end + 0.2));
           mix(p, { fBy: 0, fFy: 0, fBx: 0, fFx: 0, hipDx: 0, hipRot: 0, hipDy: 6, lean: 0, eyeOpen: 0.5, smile: 0, frown: 0.3, lookX: 0.8, browR: 0.6 }, win(t, bq.start - 0.15, d.end + 0.2, 0.1, 0.2));
+          // the take: after "but there's an interview" he turns to us, deadpan
+          mix(p, { lookX: -1, lookY: 0, eyeOpen: 0.5, headRot: -4, frown: 0.2 }, win(t, c.end + 0.05, d.start - 0.02, 0.06, 0.06));
           // slow unimpressed blink at "interview"; ears droop
           mix(p, { lookX: 1, eyeOpen: 0.4, earDroop: 0.6 }, win(t, c.start, c.end));
           if (t > c.start + 0.5 && t < c.start + 0.9) p.eyeOpen = 0.02;
@@ -364,6 +384,8 @@
         if (T) {
           // "the investor is here" — ears shoot up, eyes bulge, pupils pinpoints
           mix(p, { lookX: -1, eyeOpen: 1.35, bulge: 1.2, pupil: 0.4, brow: 1, earDroop: -0.7, smile: 0.1, arcE: 1, sq: 1.04 }, win(t, a.start - 0.1, word - 0.1, 0.06, 0.1));
+          // searches the auditorium: hand over the eyes, leans out over the edge of the stage
+          mix(p, { lean: -6, headRot: -8, lookX: -1, eyeOpen: 1.2, armFront: 1, armX: 70, armY: -190, hand: 'flat', handRot: 95, smile: 0.4, brow: 1 }, win(t, a.start + 0.35, word - 0.15, 0.12, 0.12));
           // whispering sideways: lean in, hand at the mouth
           mix(p, { lean: 12, headRot: 12, lookX: 1, eyeOpen: 0.7, smile: 0.1, frown: 0.4, brow: 0.2, browTilt: 0.7, armFront: 1, armX: 150, armY: -140, hand: 'open', handRot: 150 }, win(t, word - 0.1, a.end + 0.2, 0.12, 0.2));
           mix(p, { lookX: 1, eyeOpen: 0.8, brow: 0.8, smile: 0.1 }, win(t, bq.start, bq.end + 0.1));
@@ -372,6 +394,8 @@
           // points at the short one's belly
           mix(p, { armFront: 1, armX: 200, armY: 40, hand: 'point', handRot: -80, lookX: 1, lookY: 0.6, smile: 0.7, lidTilt: -0.3, eyeOpen: 0.75 }, win(t, d.start + 0.2, d.end + 0.6, 0.12, 0.2));
         } else {
+          // also scans the hall, hand over the eyes
+          mix(p, { lean: -4, headRot: -6, lookX: -1, eyeOpen: 1.15, armFront: 1, armX: 60, armY: -150, hand: 'flat', handRot: 95, fBy: 0, fFy: 0 }, win(t, a.start + 0.4, word - 0.1, 0.12, 0.1));
           // super-fast hide behind the back, then an innocent whistle face
           const h0 = word + 0.05;
           mix(p, { armFront: 1, armX: 150, armY: -60, hand: 'fist', arcE: 1 }, win(t, h0, h0 + 0.18, 0.05, 0.04));
@@ -476,23 +500,36 @@
         mix(p, { sq: 0.9, lean: -14, headRot: -16, arcE: 1, cross: 0.9, eyeOpen: 1.2, pupil: 0.6, jaw: 0.2, mouthO: 1, earDroop: 0.7, fBy: 0, fFy: 0 }, win(t, hit, hit + 0.35, 0.03, 0.15));
         mix(p, { cross: 0.9, eyeOpen: 1.1, headRot: 10 * Math.sin(t * 9), lean: 4 * Math.sin(t * 7), earDroop: 0.6, smile: 0.2 }, win(t, hit + 0.35, E(13), 0.1, 0.3));
         mix(p, Object.assign(V.charleston(b, k), { eyeHappy: T ? 1 : 0, smile: T ? 1 : 0.3, micT: 0.62 }), win(t, E(13), E(16), 0.3, 0.2));
-        const tapT = (a, z) => win(t, E(a), E(z), 0.1, 0.1);
+        // SOLOS: each one gets the spotlight while the other steps back into the dark
+        const so = (a, z) => win(t, E(a), E(z), 0.15, 0.15);
         if (T) {
-          mix(p, Object.assign(V.tap(bt * 2, 1), { grin: 1, eyeHappy: 1, micT: 0.62 }), tapT(16, 20));
-          mix(p, { lookX: 1, eyeOpen: 0.9, smile: 0.9, brow: 1, armX: -40, armY: 60 }, tapT(20, 24));
-          mix(p, Object.assign(V.tap(bt * 2, 1), { grin: 1, eyeOpen: 1.2, micT: 0.62 }), tapT(24, 28));
-          mix(p, { lookX: 1, eyeOpen: 1, smile: 0.9, lidTilt: -0.3, armX: -40, armY: 60 }, tapT(28, 32));
+          mix(p, Object.assign(V.runningMan(bt, 1), { grin: 1, smile: 1, eyeOpen: 1.1, micT: 0.62 }), so(16, 18));
+          mix(p, Object.assign(V.noodle(bt, 1), V.windmill(bt, 1), { eyeHappy: 1, grin: 1, micT: 0.62 }), so(18, 20));
+          // knee slide toward the audience: deep drop, lean back, arms flung open
+          const ks = E(20);
+          p.dx += 150 * smooth((t - ks) / (E(21.5) - ks)) * (1 - smooth((t - E(23.6)) / (E(24.6) - E(23.6))));
+          mix(p, { hipDy: 128, fFx: 95, fBx: -75, fBy: -8, fBa: 70, lean: -24, headRot: -22, armX: -150, armY: -150, hand: 'open', eyeHappy: 1, grin: 1, arcF: 1, micT: 0.62 }, so(20, 22));
+          // star jump, then the 'nailed it' wink to camera
+          mix(p, Object.assign(jump(t, E(22.2), 0.55, 80), {}), win(t, E(22.2) - 0.3, E(22.2) + 0.8, 0.01, 0.01));
+          if (t > E(22.2) && t < E(22.2) + 0.55) mix(p, { fBx: -150, fFx: 150, fBy: -70, fFy: -70, armX: -150, armY: -190, hand: 'open', arcF: 1, eyeHappy: 1 }, sinp((t - E(22.2)) / 0.55));
+          mix(p, { lookX: -1, wink: 1, grin: 1, smile: 1, armX: -40, armY: 120, hand: 'point', micT: 0.62 }, win(t, E(23), E(24), 0.1, 0.15));
+          // Shuki's turn: step back, arms folded-ish, side-eye
+          p.dx -= 90 * win(t, E(24), E(32), 0.5, 0.5);
+          mix(p, { lookX: 1, eyeOpen: 0.75, smile: 0.5, lidTilt: -0.2, armFront: 1, armX: 92, armY: 70, hand: 'flat', handRot: 80, micT: 0.62, fBy: 0, fFy: 0 }, win(t, E(24.2), E(31.8), 0.3, 0.3));
+          mix(p, { lookX: -1, eyeOpen: 1.1, brow: 1, frown: 0.2 }, win(t, E(29.6), E(30.6), 0.08, 0.15));   // watches the trip, looks at us
         } else {
-          mix(p, { lookX: 1, eyeOpen: 1.2, pupil: 0.6, browR: 1 }, tapT(16, 20));
-          const st = E(21);
-          mix(p, { fFy: -70, fFx: 10, lean: -4, eyeOpen: 0.9, frown: 0.2 }, win(t, st - 0.35, st, 0.25, 0.02));
-          mix(p, { fFy: 0, sq: 0.94, hipDy: 22, arcF: 1, eyeOpen: 0.02, frown: 0.4 }, win(t, st, st + 0.25, 0.02, 0.12));
-          mix(p, { lookX: -1, eyeOpen: 0.5, shrug: -14, armX: -90, armY: 30, hand: 'open', handRot: -60 }, win(t, st + 0.5, E(24), 0.15, 0.1));
-          mix(p, { lookX: 1, eyeOpen: 1.2, pupil: 0.5, sweat: 1 }, tapT(24, 28));
-          const tr = E(28.5);
-          mix(p, Object.assign(V.scramble(bt * 1.5, k), { eyeOpen: 1.2, sweat: 1 }), win(t, E(28), tr, 0.1, 0.05));
+          // Hezi's turn: steps back into the dark, deadpan, one eyebrow
+          p.dx += 90 * win(t, E(16), E(24), 0.5, 0.5);
+          mix(p, { lookX: 1, eyeOpen: 0.5, browR: 1, frown: 0.2, fBy: 0, fFy: 0, micT: 0.62 }, win(t, E(16.2), E(23.8), 0.3, 0.3));
+          mix(p, { lookX: -1, eyeOpen: 0.45, lidTilt: 0.3 }, win(t, E(22.4), E(23.4), 0.08, 0.15));          // unimpressed take during the star jump
+          // his own solo: shrug to camera, belly shake, broken robot, then the running man… trips
+          mix(p, { lookX: -1, shrug: -16, armX: -90, armY: 30, hand: 'open', handRot: -60, eyeOpen: 0.7, smile: 0.3, micT: 0.62 }, so(24, 25));
+          mix(p, Object.assign(V.shake(bt, k), { eyeHappy: 1, grin: 1, smile: 1, micT: 0.62 }), so(25, 27));
+          mix(p, Object.assign(V.robot(bt, k, true), { micT: 0.62 }), so(27, 28.6));
+          const tr = E(29.6);
+          mix(p, Object.assign(V.runningMan(bt * 1.4, k), { eyeOpen: 1.2, sweat: 1, tongueOut: 1, micT: 0.62 }), win(t, E(28.6), tr, 0.1, 0.05));
           mix(p, { lean: 22, headRot: 18, fFx: 60, fFy: -30, fBx: -30, armX: -170, armY: -100, hand: 'open', eyeOpen: 1.35, bulge: 1.2, pupil: 0.4, jaw: 0.6, mouthO: 1, arcE: 1, sweat: 2 }, win(t, tr, tr + 0.6, 0.06, 0.2));
-          mix(p, { lookX: -1, eyeOpen: 0.5, grin: 1, smile: 1, sweat: 1, lidTilt: 0.2 }, win(t, tr + 0.6, E(32), 0.12, 0.1));
+          mix(p, { lookX: -1, eyeOpen: 0.5, grin: 1, smile: 1, sweat: 1, lidTilt: 0.2, armX: -150, armY: -170, hand: 'open' }, win(t, tr + 0.6, E(32), 0.12, 0.1));
         }
         // small kicks side by side
         mix(p, Object.assign(V.kick(b, k, T ? 0.6 : 0.45), { grin: 1, smile: 1, eyeOpen: T ? 1.05 : 1.15, micT: 0.62 }), win(t, E(32), E(48), 0.2, 0.3));
@@ -581,7 +618,26 @@
       star += 18 * Math.sin((t - s1) * 6) * win(t, s1, s1 + 1.6, 0.05, 0.8);
       star += 25 * Math.sin((t - me) * 3) * win(t, me + 0.1, me + 4, 0.2, 1.2);
       const pT = this.rawPoseCached('T', t), pS = this.rawPoseCached('S', t);
-      return { t, curtain, poolT: pT.x + pT.dx, poolS: pS.x + pS.dx, glow: 0.5 };
+      // spotlight beams: on whoever sings/speaks; on each soloist; on the guitarist in his solo
+      let bT = 0, bS = 0;
+      for (const c of this.data.cues) {
+        const w = win(t, c.start - 0.25, c.end + 0.35, 0.25, 0.45);
+        if (c.who === 'T' || c.who === 'both') bT = Math.max(bT, w * (c.who === 'both' ? 0.7 : 1));
+        if (c.who === 'S' || c.who === 'both') bS = Math.max(bS, w * (c.who === 'both' ? 0.7 : 1));
+      }
+      bT = Math.max(bT, win(t, this.E(16), this.E(24), 0.2, 0.25)); bS = Math.max(bS, win(t, this.E(24), this.E(32), 0.2, 0.25));
+      bT *= 1 - win(t, this.E(24), this.E(32), 0.2, 0.25); bS *= 1 - win(t, this.E(16), this.E(24), 0.2, 0.25);
+      const bG = win(t, this.E(48), this.data.musicEnd, 0.4, 0.1);
+      if (bG > 0) { bT *= 1 - bG; bS *= 1 - bG; }
+      const off = 1 - smooth((t - this.data.musicEnd) / 0.3);
+      // the investor: a follow spot searches the dark hall and lands on the empty reserved seat
+      const a2 = this.C('s2a').start, enc2 = enc;
+      const sweep = (t0, t1) => -700 + 700 * smooth((t - t0) / (t1 - t0));
+      const oe = this.C('o7').end;
+      let audX = 0; if (t < a2 + 1.6) audX = sweep(a2 + 0.76, a2 + 1.2); else if (t < oe + 2.6) audX = sweep(oe + 1.45, oe + 1.85);
+      const signFall = smooth((t - (oe + 1.95)) / 0.35);
+      const audSpot = t > me + 3.45 ? 0 : 1;
+      return { t, curtain, beamT: bT * off, beamS: bS * off, beamG: bG, xT: pT.x + pT.dx, xS: pS.x + pS.dx, audX, signFall, audSpot, poolT: pT.x + pT.dx, poolS: pS.x + pS.dx, glow: 0.5 };
     }
 
     orchestra(t) {

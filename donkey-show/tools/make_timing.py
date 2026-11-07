@@ -55,6 +55,7 @@ data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd':
             {'t': 26.62, 'k': 'dlg', 'to': 'two', 'd': 0.35, 'e': 'out'},
             {'t': 28.3, 'k': 'dlg', 'to': 'xfaceS', 'd': 0.25, 'e': 'out'},
             {'t': 29.9, 'k': 'faceT'},
+            {'t': 31.66, 'k': 'faceS'},
             {'t': 32.1, 'k': 'faceS'},
             {'t': 33.55, 'k': 'faceT', 'to': 'xfaceT', 'd': 0.9, 'e': 'io'},
             {'t': 35.6, 'k': 'dlg'},
@@ -68,8 +69,9 @@ data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd':
             {'t': 54.15, 'k': 'two'},
             {'t': 55.75, 'k': 'dlg'},
             {'t': 55.98, 'k': 'dlg', 'to': 'xfaceT', 'd': 0.22, 'e': 'out'},
-            {'t': 56.3, 'k': 'audience'},
-            {'t': 57.2, 'k': 'dlg'},
+            {'t': 56.35, 'k': 'two'},
+            {'t': 56.75, 'k': 'audience'},
+            {'t': 57.42, 'k': 'dlg'},
             {'t': 59.05, 'k': 'faceS'},
             {'t': 62.5, 'k': 'faceT'},
             {'t': 64.5, 'k': 'dlg'},
@@ -103,10 +105,12 @@ data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd':
             {'t': 111.3, 'k': 'two', 'pulse': 1},
             {'t': 112.2, 'k': 'dlg'},
             {'t': 113.7, 'k': 'two'},
-            {'t': 115.5, 'k': 'feet'},
-            {'t': 117.6, 'k': 'two'},
-            {'t': 119.8, 'k': 'feet'},
-            {'t': 121.9, 'k': 'two'},
+            {'t': 115.5, 'k': 'two', 'pulse': 1},
+            {'t': 117.55, 'k': 'wide'},
+            {'t': 119.25, 'k': 'faceT'},
+            {'t': 119.85, 'k': 'two', 'pulse': 1},
+            {'t': 122.4, 'k': 'wide'},
+            {'t': 123.2, 'k': 'faceS'},
             {'t': 124.05, 'k': 'wide', 'pulse': 1},
             {'t': 128.3, 'k': 'two', 'pulse': 1},
             {'t': 130.0, 'k': 'cuDrum'},
@@ -125,7 +129,8 @@ data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd':
             {'t': 151.2, 'k': 'wide'},
             {'t': 158.6, 'k': 'turtle'},
             {'t': 159.35, 'k': 'wide'},
-            {'t': 161.3, 'k': 'wide', 'to': 'curtain', 'd': 3.5, 'e': 'io'}]}
+            {'t': 161.25, 'k': 'audience'},
+            {'t': 162.25, 'k': 'curtain'}]}
 # vocal envelope at 60 fps (drives jaw openness)
 y, sr = librosa.load(voc, sr=16000, mono=True)
 hop = sr // 60
