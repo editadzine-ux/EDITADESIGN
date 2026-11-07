@@ -370,10 +370,17 @@
         parts.push(cap(-11, 12, -22, 17, 9));
         lines.push('M-4,30 L-4,54 M3,30 L3,55');
       } else {                        // fist around a shaft that runs along local x (point = fist + index)
-        parts.push('M-15,8 C-16,-1 14,-1 15,8 L16,26 C16,36 -16,36 -16,26 Z');
-        parts.push(cap(-15, 8, 100, 14, 10));
-        if (type === 'point') parts.push(cap(6, 30, 0, 30, 10));
-        lines.push('M-9,10 L-9,32 M-1,10 L-1,33 M7,10 L7,32');
+        if (type === 'point') {
+          // side-view pointing hand: index finger leaves from the leading edge, thumb along it, curled fingers behind
+          parts.push('M-14,6 C-15,-1 12,-1 13,6 L13,24 C12,33 -15,33 -15,24 Z');
+          parts.push(cap(9, 20, -14, 34, 9));
+          parts.push(cap(11, 6, -40, 13, 8.5));
+          lines.push('M-9,12 C-12,18 -11,24 -6,27 M-3,12 C-6,18 -5,24 0,27');
+        } else {
+          parts.push('M-15,8 C-16,-1 14,-1 15,8 L16,26 C16,36 -16,36 -16,26 Z');
+          parts.push(cap(-15, 8, 100, 14, 10));
+          lines.push('M-9,10 L-9,32 M-1,10 L-1,33 M7,10 L7,32');
+        }
       }
       const ol = el('g', {}, g), fl = el('g', {}, g);
       for (const d of parts) { el('path', { d, fill: INK, stroke: INK, 'stroke-width': 5.5, 'stroke-linejoin': 'round' }, ol); el('path', { d, fill: s.hand }, fl); }
@@ -523,10 +530,26 @@
       const fw = clamp(p.armFront || 0, 0, 1);
       // open gestures: lift the hand a little higher and further out so the arm reads as a clean 45° showman reach
       const up = p.armY < 0 && fw < 0.5 ? 1.12 : 1;
-      const fa = [fSh[0] + dSh[0] + p.armX * up, fSh[1] + dSh[1] + p.armY * up];
+      let fa = [fSh[0] + dSh[0] + p.armX * up, fSh[1] + dSh[1] + p.armY * up];
+      // raised showman arm (reference 10): reaches up and FORWARD, nearly straight, clear of the ears,
+      // and the spread fingers continue the line of the arm
+      const raise = (micBack ? clamp((60 - p.armY) / 90, 0, 1) : clamp((-p.armY - 40) / 60, 0, 1)) * (1 - fw);
+      let hRot = p.handRot || 0;
+      if (raise > 0) {
+        const L = this.s.upper + this.s.fore;
+        const back = !micBack;                                   // Shuki's free arm is the back arm: reach up and out behind
+        const dirX = back ? Math.min(-0.45, p.armX / 200) : Math.max(0.45, -p.armX / 200);
+        let dirY = Math.max(-1, p.armY / 170);
+        if (p.hand === 'point') dirY = Math.max(dirY, -0.55);   // point out into the distance, never straight up
+        const dl = Math.hypot(dirX, dirY) || 1;
+        const ext = dirY < -0.5 ? 0.97 : 0.88;
+        const reachT = [fSh[0] + dirX / dl * L * ext, fSh[1] + dirY / dl * L * ext];
+        fa = [fa[0] + (reachT[0] - fa[0]) * raise, fa[1] + (reachT[1] - fa[1]) * raise];
+        hRot = hRot * (1 - raise) + (p.hand === 'point' ? -22 : clamp(hRot, -12, 12)) * raise;
+      }
       if (fw > 0.5) { if (this.free.g.parentNode !== this.layers.armFrontFree) this.layers.armFrontFree.appendChild(this.free.g); }
       else if (this.free.g.parentNode !== this.layers.armBack) this.layers.armBack.appendChild(this.free.g);
-      this.poseArm(this.free, fSh, fa, p.hand, p.handRot || 0);
+      this.poseArm(this.free, fSh, fa, p.hand, hRot);
       // straw
       const strawMouth = p.straw > 0.5;
       this.strawHead.setAttribute('display', strawMouth ? 'inline' : 'none');
