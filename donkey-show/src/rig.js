@@ -504,13 +504,14 @@
       // singing: the mic head sits just in front of and below the lower lip, leaning back toward the face
       const headSing = [mouthW[0] + (T_ ? 26 : 22) + (p.micDx || 0), mouthW[1] + (T_ ? 26 : 12) + 10 * clamp(p.jaw || 0, 0, 1) + (p.micDy || 0)];
       // resting: the arm hangs by the side, the mic held loosely, head pointing forward-down (reference 12)
-      const restG = [shF[0] + (T_ ? 26 : 22), shF[1] + (T_ ? 150 : 118)], ur = uOf(128), headRest = [restG[0] + ur[0] * reach, restG[1] + ur[1] * reach];
+      const restG = [shF[0] + (T_ ? 22 : 16), shF[1] + (T_ ? 164 : 134)], ur = uOf(122), headRest = [restG[0] + ur[0] * reach, restG[1] + ur[1] * reach];
       const outG = [shF[0] + 170, shF[1] - 30], uo = uOf(80), headOut = [outG[0] + uo[0] * reach, outG[1] + uo[1] * reach];
       const e = mt * mt * (3 - 2 * mt);
       const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
       let H = lerp(lerp(headRest, headSing, e), headOut, mOut);
       let pref = (128 + (40 + (p.micTilt || 0) - 128) * e) * (1 - mOut) + 80 * mOut;
       const wPref = 1.0 * (1 - e) * (1 - mOut) + 0.9 * e * (1 - mOut) + 1.4 * mOut;
+      this._armUp = e * (1 - mOut);
       this.poseMicArm(shF, H, pref, wPref, ms, reach);
       const grip = this._grip;
       this._dbg = { shF, mouthW, grip, shB };
@@ -540,7 +541,8 @@
     poseMicArm(sh, H, pref, wPref, ms, reach) {
       const A = this.mic, hs = this.id === 'T' ? 1.5 : 1.45;
       const FC = [-2 * hs, 19 * hs];                       // fist centre (hand drawings are scaled)
-      const pole = [sh[0] + 70, sh[1] + 170];              // elbow down and a little forward (reference 10)
+      const up = this._armUp || 0;                         // hanging arm: elbow straight down; singing: down and a little forward
+      const pole = [sh[0] + 10 + 60 * up, sh[1] + 240 - 70 * up];
       const solve = (a) => {
         const u = [Math.sin(a * D2R), -Math.cos(a * D2R)];
         const G = [H[0] - u[0] * reach, H[1] - u[1] * reach];
