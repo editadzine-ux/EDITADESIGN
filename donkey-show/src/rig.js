@@ -499,30 +499,34 @@
       // ---- mic arm (front): mic head sits just in front of the open mouth, the mic tilts down-forward toward a
       // natural grip below the chin, the fist wraps the shaft and the elbow hangs down and forward (V shape)
       const T_ = this.id === 'T', ms = this.sprite ? 1.3 : 1, reach = (82 - 38) * ms;
+      const micBack = T_;                                  // reference 10
+      const mSh = micBack ? shB : shF, fSh = micBack ? shF : shB;
+      this._micBack = micBack;
       const mt = clamp(p.micT, 0, 1), mOut = clamp(p.micOut || 0, 0, 1);
       const uOf = (a) => [Math.sin(a * D2R), -Math.cos(a * D2R)];
       // singing: the mic head sits just in front of and below the lower lip, leaning back toward the face
-      const headSing = [mouthW[0] + (T_ ? 26 : 22) + (p.micDx || 0), mouthW[1] + (T_ ? 26 : 12) + 10 * clamp(p.jaw || 0, 0, 1) + (p.micDy || 0)];
+      const headSing = [mouthW[0] + (T_ ? 14 : 22) + (p.micDx || 0), mouthW[1] + (T_ ? 22 : 12) + 10 * clamp(p.jaw || 0, 0, 1) + (p.micDy || 0)];
       // resting: the arm hangs by the side, the mic held loosely, head pointing forward-down (reference 12)
-      const restG = [shF[0] + (T_ ? 30 : 24), shF[1] + (T_ ? 190 : 160)], ur = uOf(122), headRest = [restG[0] + ur[0] * reach, restG[1] + ur[1] * reach];
-      const outG = [shF[0] + 170, shF[1] - 30], uo = uOf(80), headOut = [outG[0] + uo[0] * reach, outG[1] + uo[1] * reach];
+      const restG = [mSh[0] + (T_ ? 6 : 24), mSh[1] + (T_ ? 190 : 160)], ur = uOf(122), headRest = [restG[0] + ur[0] * reach, restG[1] + ur[1] * reach];
+      const outG = [mSh[0] + (micBack ? 160 : 170), mSh[1] - 30], uo = uOf(80), headOut = [outG[0] + uo[0] * reach, outG[1] + uo[1] * reach];
       const e = mt * mt * (3 - 2 * mt);
       const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
       let H = lerp(lerp(headRest, headSing, e), headOut, mOut);
-      let pref = (128 + (40 + (p.micTilt || 0) - 128) * e) * (1 - mOut) + 80 * mOut;
-      const wPref = 1.0 * (1 - e) * (1 - mOut) + 0.9 * e * (1 - mOut) + 1.4 * mOut;
+      let pref = (128 + ((T_ ? 58 : 40) + (p.micTilt || 0) - 128) * e) * (1 - mOut) + 80 * mOut;
+      const wPref = 1.0 * (1 - e) * (1 - mOut) + (T_ ? 2.2 : 0.9) * e * (1 - mOut) + 1.4 * mOut;
       this._armUp = e * (1 - mOut);
-      this.poseMicArm(shF, H, pref, wPref, ms, reach);
+      this.poseMicArm(mSh, H, pref, wPref, ms, reach);
       const grip = this._grip;
       this._dbg = { shF, mouthW, grip, shB };
+      const dSh = [shB[0] - fSh[0], shB[1] - fSh[1]];   // gestures keep their targets, measured from the back shoulder
       // ---- free arm
       const fw = clamp(p.armFront || 0, 0, 1);
       // open gestures: lift the hand a little higher and further out so the arm reads as a clean 45° showman reach
       const up = p.armY < 0 && fw < 0.5 ? 1.12 : 1;
-      const fa = [shB[0] + p.armX * up, shB[1] + p.armY * up];
+      const fa = [fSh[0] + dSh[0] + p.armX * up, fSh[1] + dSh[1] + p.armY * up];
       if (fw > 0.5) { if (this.free.g.parentNode !== this.layers.armFrontFree) this.layers.armFrontFree.appendChild(this.free.g); }
       else if (this.free.g.parentNode !== this.layers.armBack) this.layers.armBack.appendChild(this.free.g);
-      this.poseArm(this.free, shB, fa, p.hand, p.handRot || 0);
+      this.poseArm(this.free, fSh, fa, p.hand, p.handRot || 0);
       // straw
       const strawMouth = p.straw > 0.5;
       this.strawHead.setAttribute('display', strawMouth ? 'inline' : 'none');
@@ -542,7 +546,9 @@
       const A = this.mic, hs = this.id === 'T' ? 1.5 : 1.45;
       const FC = [-2 * hs, 19 * hs];                       // fist centre (hand drawings are scaled)
       const up = this._armUp || 0;                         // hanging arm: elbow straight down; singing: down and a little forward
-      const pole = [sh[0] + 45 + 25 * up, sh[1] + 150 + 20 * up];
+      const pole = this._micBack ? [sh[0] - 70 + 10 * up, sh[1] + 140 + 20 * up]   // back arm: elbow out behind the body (reference 10)
+                                 : [sh[0] + 45 + 25 * up, sh[1] + 150 + 20 * up];
+      const crossT = this._micBack ? 28 : 45;
       const wrap = (x) => ((x % 360) + 540) % 360 - 180;
       // the fist is oriented by the SHAFT: knuckle row along the mic, fingers wrapping across it (reference 10);
       // of the two ways to wrap, use the one with the least wrist bend
@@ -561,7 +567,7 @@
         const f = [r.end[0] - r.j[0], r.end[1] - r.j[1]], fl = Math.hypot(f[0], f[1]) || 1;
         const cross = Math.acos(clamp((f[0] * u[0] + f[1] * u[1]) / fl, -1, 1)) / D2R;
         const miss = Math.hypot(g[0] - G[0], g[1] - G[1]);
-        return { a, r, fa: fore, fh, g, score: Math.abs(cross - 52) + wPref * Math.abs(a - pref) + 3 * miss };
+        return { a, r, fa: fore, fh, g, score: Math.abs(cross - crossT) + wPref * Math.abs(a - pref) + 3 * miss };
       };
       let best = null;
       for (let a = pref - 35; a <= pref + 35; a += 2.5) { const c = solve(a); if (!best || c.score < best.score) best = c; }
