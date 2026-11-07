@@ -668,8 +668,16 @@
         tLook, tRaise, clock, tSigh: win(t, enc - 0.8, enc + 0.6, 0.2, 0.3), tLid: 0.5 - 0.15 * tRaise, tBlink: ((t * 0.29) % 5.3) < 0.13,
         faces: this.monkeyFaces(t),
         pianoNod: 4 * win(t, end + 0.2, end + 0.7, 0.1, 0.2),
+        frenzy: this.drumFrenzy(t),
         bassNod: 3 * win(t, end + 0.4, end + 0.9, 0.1, 0.2),
       };
+    }
+
+    // the drummer goes wild whenever the camera is on her
+    drumFrenzy(t) {
+      const sh = this.data.shots; let f = 0;
+      for (let i = 0; i < sh.length; i++) if (sh[i].k === 'cuDrum') { const z = sh[i + 1] ? sh[i + 1].t : sh[i].t + 2; f = Math.max(f, win(t, sh[i].t - 0.2, z + 0.1, 0.15, 0.2)); }
+      return t < this.data.musicEnd ? f : 0;
     }
 
     // the band stays indifferent: a yawn, one raised eyebrow, a deadpan stare at the very end

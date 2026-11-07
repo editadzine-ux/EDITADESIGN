@@ -671,6 +671,15 @@ DS.DEFAULT_DATA = {
    "pulse": 1
   },
   {
+   "t": 126.2,
+   "k": "cuDrum"
+  },
+  {
+   "t": 127.9,
+   "k": "wide",
+   "pulse": 1
+  },
+  {
    "t": 128.3,
    "k": "two",
    "pulse": 1

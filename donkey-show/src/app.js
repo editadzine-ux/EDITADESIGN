@@ -11,7 +11,7 @@
     document.body.classList.add('vert');
     document.getElementById('svg').setAttribute('viewBox', `0 0 ${FW} ${FH}`);
   }
-  const STORE = 'donkey-show-timing-v8';
+  const STORE = 'donkey-show-timing-v9';
   const $ = (s) => document.querySelector(s);
 
   // ---------- data ----------
@@ -68,7 +68,7 @@
     turtle: { s: 2.7, cx: 1772, cy: 700 },
     band: { s: 1.5, cx: 1500, cy: 700 },
     audience: { s: 1.6, cx: 960, cy: 2930 },
-    cuDrum: { s: 2.5, cx: 946, cy: 680 },
+    cuDrum: { s: 3.2, cx: 948, cy: 712 },
   };
   const D = { rip: 2.5, faceT: 2.2, faceS: 2.4, xfaceT: 3.3, xfaceS: 3.5, guitFace: 3.0, fret: 3.0, guit: 1.9 };
   let marks = {};
@@ -165,6 +165,10 @@
     stage.world.removeAttribute('transform');
     measure(pT, pS);
     const sh = camera(t);
+    // the drummer close-up is a separate angle: only her and the kit
+    const insert = sh.k === 'cuDrum';
+    stage.actors.setAttribute('display', insert ? 'none' : 'inline');
+    if (stage.beams) stage.beams.g.setAttribute('display', insert ? 'none' : 'inline'), stage.beams.dim.setAttribute('display', insert ? 'none' : 'inline');
     stage.world.setAttribute('transform', `translate(${FW / 2},${FH / 2}) scale(${sh.s.toFixed(4)}) translate(${(-sh.cx).toFixed(1)},${(-sh.cy).toFixed(1)})`);
     // subtitles: the current line, or keep the previous one briefly across tiny gaps
     let c = choreo.anyActive(t);

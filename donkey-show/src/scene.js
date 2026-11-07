@@ -543,6 +543,16 @@
         F.minH = el('path', { d: 'M0,0 L0,-52', stroke: INK, 'stroke-width': 7, 'stroke-linecap': 'round' }, c);
         el('circle', { r: 8, fill: INK }, c);
       }
+      if (name === 'drummer') {
+        // frenzy FX in sprite space: ghost sticks (motion blur), impact stars, speed arcs
+        const fx = el('g', { opacity: 0 }, root);
+        const stick = (gp) => { const g2 = el('g', {}, gp); el('path', { d: 'M0,0 L0,-215', stroke: INK, 'stroke-width': 22, 'stroke-linecap': 'round' }, g2); el('path', { d: 'M0,0 L0,-215', stroke: '#e9c27c', 'stroke-width': 12, 'stroke-linecap': 'round' }, g2); return g2; };
+        const ghR = [0, 1, 2].map(() => stick(fx)), ghL = [0, 1, 2].map(() => stick(fx));
+        const star = (x, y, r) => { const g2 = el('g', { transform: `translate(${x},${y})` }, fx); let d = ''; for (let i = 0; i < 16; i++) { const rr = i % 2 ? r * 0.42 : r, a = (i * Math.PI) / 8; d += (i ? 'L' : 'M') + f1(Math.cos(a) * rr) + ',' + f1(Math.sin(a) * rr); } el('path', { d: d + 'Z', fill: '#fff4c6', stroke: INK, 'stroke-width': 6, 'stroke-linejoin': 'round' }, g2); return g2; };
+        const hitSnare = star(640, 470, 70), hitCymR = star(770, 330, 80), hitCymL = star(135, 300, 80), hitKick = star(450, 700, 95);
+        const lines = el('path', { d: 'M90,250 L40,200 M60,320 L0,320 M800,250 L860,200 M820,330 L884,330 M300,60 L270,10 M560,60 L590,10', stroke: '#fff4c6', 'stroke-width': 10, 'stroke-linecap': 'round', fill: 'none' }, fx);
+        F.fx = { fx, ghR, ghL, hitSnare, hitCymR, hitCymL, hitKick, lines };
+      }
       out[name] = F;
     }
     return { g, F: out };
@@ -581,8 +591,34 @@
     // drummer: stick taps on the beat; accent hits; bob when she secretly enjoys it
     const acc = Math.max(o.dry || 0, o.finalHit || 0, o.tss || 0, o.rim || 0);
     headPose(F.drummer, faces.drums || {}, (o.drumBob || 0) * 6 * Math.abs(Math.sin(beat * Math.PI)), (o.drumBob || 0) * 4 * Math.sin(beat * Math.PI));
-    F.drummer.pieces.stickR.setAttribute('transform', `rotate(${f1((8 * pulse(0.5) * play + 16 * acc))} 520 430)`);
-    F.drummer.pieces.stickL.setAttribute('transform', `rotate(${f1(-10 * pulse(0) * play)} 380 470)`);
+    const fz = o.frenzy || 0;
+    // frenzy: sticks hammer 4 hits per beat each (alternating), head bangs, body shakes, ghost sticks + impact stars
+    const hw = (ph) => Math.pow(Math.abs(Math.sin(Math.PI * (beat * 4 + ph))), 0.6);   // 0 = stick on the drum
+    const rR = fz > 0 ? -38 * hw(0) * fz : 0, rL = fz > 0 ? -34 * hw(0.5) * fz : 0;
+    F.drummer.pieces.stickR.setAttribute('transform', `rotate(${f1((8 * pulse(0.5) * play + 16 * acc) * (1 - fz) + rR)} 520 430)`);
+    F.drummer.pieces.stickL.setAttribute('transform', `rotate(${f1(-10 * pulse(0) * play * (1 - fz) + rL)} 380 470)`);
+    if (fz > 0) {
+      const bang = Math.abs(Math.sin(Math.PI * beat * 2));
+      headPose(F.drummer, faces.drums || { mouth: 'o' }, 22 * bang * fz, (12 * Math.sin(Math.PI * beat * 2)) * fz);
+      const B = F.drummer.B, m = DS.SPRITES.band_drummer, jx = 5 * Math.sin((o.t || 0) * 61) * fz, jy = 4 * Math.abs(Math.sin(Math.PI * beat * 4)) * fz;
+      F.drummer.root.setAttribute('transform', `translate(${f1(B.x + jx)},${f1(B.bottom - m.h * B.s + jy)}) scale(${B.s})`);
+    }
+    const X = F.drummer.fx;
+    if (X) {
+      X.fx.setAttribute('opacity', fz.toFixed(3));
+      if (fz > 0.01) {
+        const baseR = 33 + rR, baseL = 51 + rL;   // stick angles from vertical in sprite space (as drawn)
+        X.ghR.forEach((g2, i) => { g2.setAttribute('transform', `translate(532,405) rotate(${f1(baseR + (i + 1) * 13)})`); g2.setAttribute('opacity', (0.42 - i * 0.12).toFixed(2)); });
+        X.ghL.forEach((g2, i) => { g2.setAttribute('transform', `translate(382,472) rotate(${f1(baseL + (i + 1) * 12)})`); g2.setAttribute('opacity', (0.42 - i * 0.12).toFixed(2)); });
+        const k = Math.floor(beat * 4), crash = ((k % 4) + 4) % 4;
+        const on = (ph) => Math.pow(1 - hw(ph), 5);
+        X.hitSnare.setAttribute('opacity', on(0).toFixed(2));
+        X.hitCymR.setAttribute('opacity', (crash === 0 ? on(0.5) : 0).toFixed(2));
+        X.hitCymL.setAttribute('opacity', (crash === 2 ? on(0.5) : 0).toFixed(2));
+        X.hitKick.setAttribute('opacity', (Math.pow(Math.abs(Math.cos(Math.PI * beat)), 12)).toFixed(2));
+        X.lines.setAttribute('opacity', (0.4 + 0.6 * Math.abs(Math.sin((o.t || 0) * 23))).toFixed(2));
+      }
+    }
     // turtle: looks at the clock, raises the sign, circles it ('keep going'), sighs
     const T = F.turtle, raise = o.tRaise || 0, look = o.tLook || 0, go = o.tGo || 0, ga = (o.t || 0) * 9;
     headPose(T, {}, (o.tSigh || 0) * 10, look * 10 - (o.tSigh || 0) * 6);

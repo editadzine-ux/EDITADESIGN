@@ -112,6 +112,8 @@ data = {'bpm': round(60 / slope, 3), 'beat0': round(float(icpt), 3), 'musicEnd':
             {'t': 122.4, 'k': 'wide'},
             {'t': 123.2, 'k': 'faceS'},
             {'t': 124.05, 'k': 'wide', 'pulse': 1},
+            {'t': 126.2, 'k': 'cuDrum'},
+            {'t': 127.9, 'k': 'wide', 'pulse': 1},
             {'t': 128.3, 'k': 'two', 'pulse': 1},
             {'t': 130.0, 'k': 'cuDrum'},
             {'t': 131.7, 'k': 'two'},
