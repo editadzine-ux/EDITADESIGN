@@ -962,3 +962,6 @@ textarea.inp{min-height:110px;resize:vertical}
 }
 
 html,body{margin:0;background:#F1EADC}
+/* Project links use the existing card and case controls. */
+.ed a:is(.ix-row,.lg-item,.pf,.wc-card,.cs-back,.cs-next){text-decoration:none}
+.ed a.ix-row:hover{color:#F1EADC}
