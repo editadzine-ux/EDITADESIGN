@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Edita Site
  * Description: מציג את האתר החדש של Edita בעמוד הבית. התוכן נמשך מהריפו editadzine-ux/editadesign ב־GitHub. השבתת התוסף מחזירה את עמוד הבית הקודם.
- * Version: 1.12.0
+ * Version: 1.13.0
  * Author: Edita
  * Requires PHP: 7.4
  */
@@ -10,6 +10,10 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+define( 'EDITA_SITE_MAIN_FILE', __FILE__ );
+$edita_portfolio_file = __DIR__ . '/site/wordpress/portfolio/portfolio.php';
+if ( is_file( $edita_portfolio_file ) ) { require_once $edita_portfolio_file; }
 
 define( 'EDITA_SITE_REPO_ZIP', 'https://codeload.github.com/editadzine-ux/editadesign/zip/refs/heads/main' );
 
@@ -227,6 +231,9 @@ add_action( 'template_redirect', function () {
 	}
 	$html = str_replace( 'href="css/site.css', 'href="' . $url . 'css/site.css', $html );
 	$html = str_replace( '<script src="js/app.js"></script>', '<script>' . str_replace( '</script', '<\/script', $app ) . '</script>', $html );
+	if ( function_exists( 'edita_portfolio_ready' ) && edita_portfolio_ready() ) {
+		$html = edita_portfolio_home( $html );
+	}
 	if ( $preview ) {
 		$html = str_replace( '<head>', "<head>\n<meta name=\"robots\" content=\"noindex\">", $html );
 	}
@@ -407,6 +414,9 @@ add_filter( 'robots_txt', function ( $out ) {
 function edita_site_pages() {
 	$f = plugin_dir_path( __FILE__ ) . 'site/pages/index.json';
 	$list = file_exists( $f ) ? json_decode( file_get_contents( $f ), true ) : array(); // phpcs:ignore
+	if ( is_array( $list ) && function_exists( 'edita_portfolio_ready' ) && edita_portfolio_ready() ) {
+		$list = array_filter( $list, function ( $path ) { return 0 !== strpos( $path, 'projects/' ); } );
+	}
 	return is_array( $list ) ? $list : array();
 }
 

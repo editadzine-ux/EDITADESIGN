@@ -5,7 +5,7 @@ const portfolioHome = new URL(document.querySelector('meta[name="edita-home"]')?
 const mediaRoot = document.currentScript?.src ? new URL('../', document.currentScript.src) : portfolioHome;
 const mediaURL = path => new URL(path, mediaRoot).href;
 const projectPath = slug => new URL('projects/' + slug + '/', portfolioHome).pathname;
-const projectTitle = p => p.name + ' | ' + p.kind + ' | Edita Design';
+const projectTitle = p => [p.name, p.kind, 'Edita Design'].filter(Boolean).join(' | ');
 
 function handleLocalLink(event) {
   if (!event) return true;
@@ -19,7 +19,9 @@ class Component extends DCLogic {
 
   data() {
     if (this._P) return this._P;
-    this._P = [
+    const payload = document.getElementById('edita-projects-data');
+    const catalogue = payload ? JSON.parse(payload.textContent) : null;
+    this._P = catalogue ?? [
       { no: '01', slug: 'iocea', logo: 'assets/cf9a15706c1e51c787d93c3d92a84854.png', lh: 79, full: 'assets/6bc72a3ace9d63dc3aa0fc8848767702.jpg', demo: 'assets/7276f9bd2c3ceea1a30742032260b257.jpg', name: 'IOCEA', client: 'ארגון המהנדסים והאדריכלים העצמאיים', kind: 'אפיון ובניית אתר', tags: ['אתר', 'WordPress', 'UX/UI'], cats: ['web', 'ux'], img: 'assets/1aca197e879c7ec4aca00bdc207cc1f1.jpg', shot: 'assets/8fc0d8ec10c014c5baf3d568f26eabd0.jpg', live: 'https://www.iocea.org.il/', facts: [{ k: 'סוג הפרויקט', v: 'אפיון ובניית אתר' }, { k: 'שנה', v: '2025' }, { k: 'תחום', v: 'ארגון מקצועי' }], hook: 'ארגון ותיק שהיה צריך אתר שנראה כמו העתיד של המקצוע.', body1: 'ארגון המהנדסים והאדריכלים העצמאיים הוא ארגון מקצועי ותיק, שמשרת קהל חברים רחב. המטרה הייתה אתר חדש שישמור על הסמכות והמורשת של הארגון, ובאותו זמן ירגיש עדכני, נגיש ורלוונטי לדור הבא של המקצוע.', challenge: 'ארגון המהנדסים והאדריכלים העצמאיים הוא ארגון מקצועי ותיק, שמשרת קהל חברים רחב. המטרה הייתה אתר חדש שישמור על הסמכות והמורשת של הארגון, ובאותו זמן ירגיש עדכני, נגיש ורלוונטי לדור הבא של המקצוע.', solution: 'אתר חדש שבנוי סביב החברים.', body2: 'עיצוב נקי ומודרני, ואתר WordPress שאופיין מחדש כך שהמידע, השירותים והתכנים של הארגון נגישים במהירות, מהמחשב ומהנייד.', scope: ['אפיון UX', 'עיצוב אתר', 'פיתוח WordPress', 'התאמה לנייד'] },
       { no: '02', slug: 'rivera', logo: 'assets/4384033528ab3b2f7a6c495117580d8f.png', lh: 61, full: 'assets/b70107a051287b1a39f9d389de16356d.jpg', demo: 'assets/a1ff69643c08aa729843437a9619a238.jpg', name: 'Rivera', client: 'RIVERA GROUP · נדל״ן ומלונאות ביוון', kind: 'מיתוג מחדש ואתר', tags: ['מיתוג מחדש', 'אתר', 'נדל״ן'], cats: ['identity', 'ux', 'web'], img: 'assets/4af468f5f0140f18166d6ab68fd5ad49.jpg', shot: 'assets/ce9f0e66cd0bd90284c4d669c2a99094.jpg', live: 'https://rivera-gr.com/', facts: [{ k: 'סוג הפרויקט', v: 'מיתוג מחדש ואתר' }, { k: 'שנה', v: '2026' }, { k: 'תחום', v: 'נדל״ן ומלונאות' }], hook: 'מיתוג מחדש למותג נדל״ן שמרגישים בו את הים עוד לפני הביקור.', body1: 'RIVERA GROUP מתמחה בבניית מלונות, בנייני סטודנטים ונכסי יוקרה בעיר וולוס ובחצי האי פיליון, בלב הטבע הפראי של יוון. המיתוג מחדש היה צריך לדבר אל משקיעים בישראל ובעולם, ולשדר בו־זמנית יוקרה, אמינות ותחושת מקום: הים, האור והאבן של יוון. הוא גם היה צריך ללוות את כל מסע ההשקעה, מההיכרות הראשונה, דרך תוכנית Golden Visa ועד סגירת העסקה.', challenge: 'RIVERA GROUP מתמחה בבניית מלונות, בנייני סטודנטים ונכסי יוקרה בעיר וולוס ובחצי האי פיליון, בלב הטבע הפראי של יוון. המיתוג מחדש היה צריך לדבר אל משקיעים בישראל ובעולם, ולשדר בו־זמנית יוקרה, אמינות ותחושת מקום: הים, האור והאבן של יוון. הוא גם היה צריך ללוות את כל מסע ההשקעה, מההיכרות הראשונה, דרך תוכנית Golden Visa ועד סגירת העסקה.', solution: 'זהות חדשה, חומרי שיווק ואתר דו־לשוני שמוביל להשקעה.', body2: 'זהות ויזואלית שנשענת על סמל A גלי, שילוב של אות, גל וקו חוף, לצד פלטת גוונים ימית וחמה וטיפוגרפיה מרווחת. האתר נבנה על גבי WordPress בהתאמה אישית מלאה: עמודי פרויקטים עשירים, מערך תוכן דו־לשוני וטפסי לידים שמחוברים ישירות למערך המכירות.', scope: ['מיתוג מחדש', 'חומרי שיווק', 'אפיון UX', 'עיצוב אתר', 'פיתוח WordPress', 'אתר דו־לשוני'], result: 'נוכחות דיגיטלית שמרגישה כמו ביקור בנכס: רגועה, בהירה ומזמינה לפעולה.' },
       { no: '03', slug: 'dan-asher', logo: 'assets/8e52788be373334044882b3994fa6cbc.png', lh: 35, full: 'assets/72a69628841172603f7009e52907b395.jpg', demo: 'assets/866e62dad64e36c4e1216492bd39f273.jpg', name: 'Dan Asher', client: 'ד״ר דן אשר · המימד הסמוי, ניהול ידע ופיתוח ההון האנושי', kind: 'אפיון ובניית אתר', tags: ['אתר', 'WordPress', 'ייעוץ ארגוני'], cats: ['web', 'ux'], img: 'assets/21dcebc36c68963e10e6cfc5aaf43136.jpg', live: 'https://danasher.co.il/', facts: [{ k: 'סוג הפרויקט', v: 'אפיון ובניית אתר' }, { k: 'שנה', v: '2026' }, { k: 'תחום', v: 'ניהול ידע והון אנושי' }], hook: 'המימד הסמוי: אתר שהופך ידע בלתי נראה למשהו שרואים.', body1: 'ד״ר דן אשר מלווה ארגונים בניהול ידע, שימור ידע ופיתוח ההון האנושי. המטרה הייתה אתר שמשדר עומק, תובנה ומקצועיות, ומארגן תחומי פעילות רבים בצורה ברורה.', challenge: 'ד״ר דן אשר מלווה ארגונים בניהול ידע, שימור ידע ופיתוח ההון האנושי. המטרה הייתה אתר שמשדר עומק, תובנה ומקצועיות, ומארגן תחומי פעילות רבים בצורה ברורה.', solution: 'אתר תוכן עשיר ומסודר.', body2: 'עיצוב מדויק עם נגיעות ניאון, ואתר WordPress עם עמודי שירותים, הרצאות וסדנאות ובלוג המימד הסמוי.', scope: ['אפיון UX', 'עיצוב אתר', 'פיתוח WordPress', 'בלוג'] },
@@ -411,7 +413,7 @@ class Component extends DCLogic {
 
   indexAtLocation() {
     const path = location.pathname.replace(/\/?(?:index\.html)?$/, '/');
-    return this.data().findIndex(project => project.href === path);
+    return this.data().findIndex(project => project.href.toLowerCase() === path.toLowerCase());
   }
 
   onProjectHistory = () => {
@@ -583,7 +585,7 @@ class Component extends DCLogic {
     const cat = { 'מיתוג': 'identity', 'קמפיין ודף נחיתה': 'campaign', 'תוכן לרשתות': 'campaign' }[service] || 'web';
     const out = [];
     P.forEach((p, i) => { if (out.length < 3 && p.cats && p.cats.indexOf(cat) >= 0) out.push(i); });
-    return out.length ? out : [0, 1, 2];
+    return out.length ? out : P.slice(0, 3).map((p, i) => i);
   }
 
   chatIntent(text) {
@@ -898,9 +900,9 @@ class Component extends DCLogic {
     }));
     const svA = Math.max(0, s.sv);
     const svIll = {}; for (let k = 0; k < 7; k++) svIll['ic' + k] = 'st-ill' + (k === svA ? ' on' : '');
-    const caseOpen = s.open >= 0;
-    const c = caseOpen ? P[s.open] : P[0];
-    const nxt = P[(Math.max(s.open, 0) + 1) % P.length];
+    const caseOpen = !!P[s.open];
+    const c = (caseOpen ? P[s.open] : P[0]) || {};
+    const nxt = P.length ? P[(Math.max(s.open, 0) + 1) % P.length] : {};
     const domain = c.live ? c.live.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '') : '';
     const cs = Object.assign({}, c, {
       hasLive: !!c.live, noLive: !c.live, domain: domain,
@@ -917,7 +919,7 @@ class Component extends DCLogic {
     const cst = s.chatStep && flow[s.chatStep] ? flow[s.chatStep] : null;
     const PP = this.data();
     const chatMsgs = s.chatMsgs.map((m) => m.cards
-      ? { isText: false, isCards: true, cards: m.cards.map((i) => ({ href: PP[i].href, img: PP[i].img, name: PP[i].name, kind: PP[i].kind || PP[i].client, open: event => this.chatOpenCase(i, event) })) }
+      ? { isText: false, isCards: true, cards: m.cards.filter(i => PP[i]).map((i) => ({ href: PP[i].href, img: PP[i].img, name: PP[i].name, kind: PP[i].kind || PP[i].client, open: event => this.chatOpenCase(i, event) })) }
       : { isText: true, isCards: false, text: m.text, cls: 'wc-msg ' + (m.who === 'me' ? 'wc-me' : 'wc-bot') });
     const optList = s.chatStep === 'menu' ? (s.chatOpts2 || []) : (cst && cst.opts ? cst.opts : []);
     const chatOpts = s.chatTyping ? [] : optList.map((o) => ({ label: o, pick: () => this.chatChoose(o) }));

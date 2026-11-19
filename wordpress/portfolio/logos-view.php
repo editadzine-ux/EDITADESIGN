@@ -1,0 +1,2 @@
+<?php defined( 'ABSPATH' ) || exit; /* Generated from the public case template. */ ?>
+<div class="lg-track"> <?php foreach ($logoLoop as $l) : ?><a class="lg-item" href="<?php echo esc_attr($l['href']); ?>" aria-label="<?php echo esc_attr($l['label']); ?>" aria-hidden="<?php echo esc_attr($l['dup']); ?>" tabindex="<?php echo esc_attr($l['tab']); ?>"><img src="<?php echo esc_attr($l['logo']); ?>" alt="<?php echo esc_attr($l['name']); ?>" style="--h: <?php echo esc_attr($l['lh']); ?>" loading="lazy"></a><?php endforeach; ?> </div>
